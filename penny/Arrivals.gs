@@ -24,7 +24,8 @@ function allShipmentsYtd_(ss, year) {
   const out = [];
   Object.keys(seen).forEach(function (jo) {
     const r = seen[jo];
-    const anchor = validDate_(r['ATA']) || validDate_(r['ETA']) ||
+    const arrival = arrivalOf_(r).date;           // same arrival rule as the queues
+    const anchor = arrival || validDate_(r['ETA']) ||
                    validDate_(r['Shipment Date']) || validDate_(r['ETD']);
     if (!anchor) return;
     if (anchor.getFullYear() !== year) return;
@@ -42,8 +43,11 @@ function allShipmentsYtd_(ss, year) {
       etd: validDate_(r['ETD']),
       atd: validDate_(r['ATD']),
       eta: validDate_(r['ETA']),
-      ata: validDate_(r['ATA']),
-      delivered: validDate_(r['Delivery Date']),
+      ata: validDate_(r['ATA']),                  // as LogiSys wrote it, for the registers
+      arrivedOn: arrival,                         // trusted arrival, for counts and lead times
+      arrived: arrivalOf_(r).arrived,
+      delivered: isDelivered_(r),
+      deliveredOn: deliveredOn_(r),
       c20: num_(r['Containers 20ft']),
       c40: num_(r['Containers 40ft']),
       packages: num_(r['Total Packages']),
@@ -77,16 +81,14 @@ function updateArrivals_(ss, ships, year) {
   const c20 = ships.reduce(function (a, s) { return a + s.c20; }, 0);
   const c40 = ships.reduce(function (a, s) { return a + s.c40; }, 0);
   const delivered = ships.filter(function (s) { return !!s.delivered; }).length;
-  const arrived = ships.filter(function (s) { return !!s.ata; }).length;
+  const arrived = ships.filter(function (s) { return s.arrived; }).length;
 
-  // lead times on delivered shipments
-  const leads = ships.filter(function (s) { return s.ata && s.delivered; })
-                     .map(function (s) { return daysBetween_(s.ata, s.delivered); })
-                     .filter(function (n) { return n !== null && n >= 0; })
-                     .sort(function (a, b) { return a - b; });
-  const median = leads.length ? (leads.length % 2
-        ? leads[(leads.length - 1) / 2]
-        : Math.round((leads[leads.length / 2 - 1] + leads[leads.length / 2]) / 2)) : '';
+  // lead times on delivered shipments: trusted arrival -> first reported delivered
+  const leads = ships.filter(function (s) { return s.arrivedOn && s.deliveredOn; })
+                     .map(function (s) { return daysBetween_(s.arrivedOn, s.deliveredOn); })
+                     .filter(function (n) { return n !== null && n >= 0; });
+  const median = percentile_(leads, 0.5);
+  const p75 = percentile_(leads, 0.75);
 
   const rows = [];
   rows.push(['PHILINDO CONTAINER EXPRESS INC.']);
@@ -105,15 +107,17 @@ function updateArrivals_(ss, ships, year) {
       g.reduce(function (a, s) { return a + s.packages; }, 0)]);
   });
   rows.push([]);
-  rows.push(['Arrived (ATA recorded)', arrived]);
+  rows.push(['Arrived', arrived]);
   rows.push(['Delivered', delivered]);
   rows.push(['Still pending', ships.length - delivered]);
   rows.push(['Median ATA to delivery (days)', median]);
+  rows.push(['p75 ATA to delivery (days)', p75]);
+  rows.push(['Lead times measured on', leads.length]);
   rows.push([]);
 
   // monthly breakdown
   rows.push(['MONTHLY BREAKDOWN','Shipments','SEA FCL','SEA LCL','AIR','20ft','40ft']);
-  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const names = MONTH_NAMES_;
   for (var m = 1; m <= 12; m++) {
     const mm = ships.filter(function (s) { return s.month === m; });
     if (!mm.length) continue;
@@ -154,14 +158,31 @@ function updateArrivals_(ss, ships, year) {
   return {
     total: ships.length, fcl: groups['SEA FCL'].length, lcl: groups['SEA LCL'].length,
     air: groups['AIR'].length, c20: c20, c40: c40, delivered: delivered,
-    pending: ships.length - delivered, median: median
+    pending: ships.length - delivered, median: median, p75: p75, leads: leads.length
   };
+}
+
+const MONTH_NAMES_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/**
+ * The monthly report due as of `now`, or null. Due from the 7th for the
+ * month just ended, until it exists — so a 7th that falls on a weekend is
+ * picked up on the next working day. The AIR tab is written last, so its
+ * presence means the report is complete.
+ */
+function monthlyDue_(ss, now) {
+  if (now.getDate() < CONFIG.MONTHLY_REPORT_DAY) return null;
+  const m = now.getMonth();
+  const y = m === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const mn = m === 0 ? 12 : m;
+  const name = CONFIG.SHEET_MONTHLY_PREFIX + ' ' + MONTH_NAMES_[mn - 1] + ' ' + y;
+  if (ss.getSheetByName(name + ' — AIR')) return null;          // already generated
+  return { year: y, month: mn, name: name };
 }
 
 /** Monthly arrivals report — three tabs, matching the existing format. */
 function buildMonthlyReport_(ss, ships, year, monthNum) {
-  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const label = names[monthNum - 1] + ' ' + year;
+  const label = MONTH_NAMES_[monthNum - 1] + ' ' + year;
   const name = CONFIG.SHEET_MONTHLY_PREFIX + ' ' + label;
 
   const upto = ships.filter(function (s) { return s.month <= monthNum; });

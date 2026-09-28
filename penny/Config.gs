@@ -7,9 +7,10 @@
  *
  * READ-ONLY against every existing Philindo sheet.
  * Penny's ONLY writes are to sheets she creates herself:
- *   - LogiSys Live      (mirror, written by the importer; Penny reads only)
  *   - Penny Arrivals    (her own summary)
  *   - Penny Monthly     (her own generated report)
+ * LogiSys Live and LogiSys Archive are written by the importer; Penny
+ * only reads them.
  * She never touches the CA Tracker, Billing Tracker, Manifest Control,
  * or any Philindo web app.
  */
@@ -25,18 +26,24 @@ const CONFIG = {
   MONTHLY_REPORT_DAY: 7,      // arrivals report generated on the 7th
   TZ: 'Asia/Manila',
 
-  // ---- Feed intake (the importer) --------------------------------------
-  FEED_SENDER: 'no-reply@philindo.com.ph',
-  FEED_SUBJECT_SEA: 'SEA Shipment Register',     // matched loosely
-  FEED_SUBJECT_AIR: 'AIR Shipment Report',
-  FEED_LABEL_DONE: 'LogiSys/Imported',
-  FEED_HEADER_ROW: 4,          // LogiSys puts 3 preamble lines above the header
+  // Feed intake (sender, subjects, label, column maps) lives in the
+  // importer's own project — see importer/Importer.gs. Penny only reads.
 
   // ---- Scope cutoff ----------------------------------------------------
   // LogiSys is not updated as reliably as the CA Tracker. Anything anchored
   // before this date is treated as already delivered and is out of scope,
   // whatever its status says. COO's rule, 28 Sep 2026.
   SCOPE_FROM: new Date(2026, 8, 1),   // 1 September 2026
+
+  // ---- Arrival source — ONE switch -------------------------------------
+  // LogiSys writes its ETA into the ATA field, so while Ariel maintains the
+  // tracker separately the LogiSys ATA is not trusted on its own
+  // (28 Sep 2026: 33 of 87 arrival dates disagreed, all one direction).
+  //   false -> arrival = post-arrival status milestone, then the LogiSys ATA
+  //            only where it differs from that row's own ETA
+  //   true  -> arrival = the LogiSys ATA as written
+  // Flip to true once Ariel updates LogiSys directly. Nothing else changes.
+  TRUST_LOGISYS_ATA: false,
 
   // ---- Spreadsheets ---------------------------------------------------
   // The workbook holding LogiSys Live + LogiSys Archive (written by importer).
@@ -75,9 +82,11 @@ const CONFIG = {
   DEMURRAGE_FREE_DAYS: 7,    // line container MIN free -> charges from day 8
 
   // ---- Thresholds (calendar days) -------------------------------------
+  // Queue 1 red and critical are NOT set here — they are derived from the
+  // free time above by q1Thresholds_(): critical = first charge day,
+  // red = RED_LEAD_DAYS before it. Change a free period and they move.
   Q1_AMBER: 2,               // arrived, not delivered
-  Q1_RED: 4,                 // 2 days before storage charges begin
-  Q1_CRITICAL: 6,            // storage running, demurrage 2 days out
+  RED_LEAD_DAYS: 2,          // red always sits this many days before the first charge
 
   Q2_ETA_WINDOW: 3,          // in transit, arriving within N days
 
@@ -98,9 +107,8 @@ const CONFIG = {
   },
   UNILAB_PHARMA_SLA_WORKING_DAYS: 7,
 
-  // ---- Total ATA -> delivered ------------------------------------------
-  TOTAL_AMBER: 5,
-  TOTAL_RED: 8,
+  // Unilab Indonesia pharma lane: Unilab + a loading port matching this
+  UNILAB_PHARMA_PORTS: ['indonesia','jakarta','tanjung priok','surabaya','semarang','belawan','idjkt','idsub'],
 
   // ---- Date sanity -----------------------------------------------------
   DATE_MIN: new Date(2024, 0, 1),
@@ -143,14 +151,29 @@ const CONFIG = {
     'do issued': 'Released',
     'gatepass released': 'Released'
   },
+  // Milestones that only happen AFTER arrival. With TRUST_LOGISYS_ATA off,
+  // these are what say a shipment has arrived. ("Vessel One Reached" is
+  // deliberately absent: vessel one can be a transhipment leg.)
+  STATUS_POST_ARRIVAL: ['container discharged','do issued','gatepass released',
+                        'payment of duties and taxes','final assesment','final assessment'],
   // Used only to spot an arrival that the ATA column never recorded
   STATUS_IMPLIES_ARRIVAL: ['reached','discharged','do issued','gatepass',
-                           'lodgement','checking of documents','duties']
+                           'lodgement','checking of documents','duties'],
+
+  // ---- Never contacted — checked before every send ---------------------
+  NEVER_CONTACT: ['juan carlos','raphael ramos','billing','pablo franco',
+                  'oliver osias','cfo','president']
 };
 
-// LogiSys Live schema contract. The importer writes these exact headers.
-// LogiSys Live schema. Written by the importer, normalised from the two
-// LogiSys register exports (SEA and AIR), whose own columns differ.
+// Headers Penny cannot run without. Delivery is read from 'Delivered',
+// 'Delivery Date' (if present) or a delivered status, so neither is required.
+const LIVE_REQUIRED = ['JO Number','Client','Mode','ETD','ETA','ATA','Status',
+                       'Account Handler','Last Updated','Source Report Date'];
+
+// LogiSys Live schema contract. The importer writes these exact headers,
+// normalised from the two LogiSys register exports (SEA and AIR).
+// 'Delivered' holds the report date on which the JO was FIRST reported with
+// a delivered status (LogiSys carries no delivery date); blank otherwise.
 const FEED_HEADERS = [
   'JO Number','FSA Number','BL/AWB','House BL/AWB','Shipper','Client',
   'Mode','Cargo Type','Loading Port','Discharge Port','Place Of Receipt',
@@ -159,28 +182,3 @@ const FEED_HEADERS = [
   'Total Packages','Unit','Goods Description','Airline','Flight No',
   'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date'
 ];
-
-// How each LogiSys register's columns map onto the schema above.
-// Header text is matched exactly as LogiSys writes it — note that the FSA
-// column is spelled differently in the two reports.
-const SEA_MAP = {
-  'Shipment No':'JO Number', 'FSA Number (UDF)':'FSA Number', 'BL NO':'BL/AWB',
-  'HBL No':'House BL/AWB', 'Shipper':'Shipper', 'Consignee':'Client',
-  'Cargo Type':'Cargo Type', 'Loading Port':'Loading Port',
-  'Discharge Port':'Discharge Port', 'Place Of Receipt':'Place Of Receipt',
-  'Place Of Delivery':'Place Of Delivery', 'Shipment Date':'Shipment Date',
-  'ETD':'ETD', 'ATD':'ATD', 'ETA':'ETA', 'ATA':'ATA',
-  '20 Feet Containers':'Containers 20ft', '40 Feet Containers':'Containers 40ft',
-  '45 Feet Containers':'Containers 45ft', 'Container Nos.':'Container Nos',
-  'Total Packages':'Total Packages', 'Unit':'Unit',
-  'Good Desc':'Goods Description', 'Status':'Status'
-};
-const AIR_MAP = {
-  'Shipment No':'JO Number', 'FSANumber (UDF)':'FSA Number', 'AWB NO':'BL/AWB',
-  'HAWB No':'House BL/AWB', 'Shipper':'Shipper', 'Consignee':'Client',
-  'Airline':'Airline', 'Flight No':'Flight No', 'Loading Port':'Loading Port',
-  'Discharge Port':'Discharge Port', 'Place Of Delivery':'Place Of Delivery',
-  'Shipment Date':'Shipment Date', 'ETD':'ETD', 'ATD':'ATD',
-  'ETA':'ETA', 'ATA':'ATA', 'Total Packages':'Total Packages', 'Unit':'Unit',
-  'Good Desc':'Goods Description', 'Status':'Status'
-};

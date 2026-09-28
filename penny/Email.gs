@@ -64,7 +64,11 @@ function q1Html_(items) {
       esc_(s.client),
       fmtDate_(s.ata),
       '<b>' + s.age + 'd</b>',
-      clock + (s.slaBreach ? '<br><span style="color:#b91c1c;">past ' + s.sla + 'd client standard</span>' : ''),
+      clock + (s.slaBreach ? '<br><span style="color:#b91c1c;">past the ' +
+        (s.hours !== null && s.hours !== undefined ? (s.sla * 24) + '-hour' : s.sla + '-day') +
+        ' client standard</span>' : '') +
+      (s.pharmaBreach ? '<br><span style="color:#b91c1c;">' + s.workingDays + ' working days — Indonesia pharma SLA is ' +
+        CONFIG.UNILAB_PHARMA_SLA_WORKING_DAYS + '</span>' : ''),
       sevChip_(s.sev)
     ];
   });
@@ -75,10 +79,11 @@ function q2Html_(items) {
   if (!items.length) return '';
   const rows = items.map(function (s) {
     return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
-      fmtDate_(s.eta) + (s.daysToEta === 0 ? ' (today)' : ' (' + s.daysToEta + 'd)'),
-      fundingCell_(s)];
+      Utilities.formatDate(s.eta, tz_(), 'EEE d MMM') +
+        (s.daysToEta === 0 ? ' (today)' : ' (' + s.daysToEta + 'd)') + ' — documents complete?',
+      fundingCell_(s), sevChip_(s.sev)];
   });
-  return table_(['JO','Client','Arriving','Cash advance'], rows);
+  return table_(['JO','Client','Arriving','Cash advance',''], rows);
 }
 
 /** Cash advance funding, in the team's own words. Money, not port release. */
@@ -88,18 +93,18 @@ function fundingCell_(s) {
     return 'Partially released' +
       (s.balanceToRelease > 0 ? ' \u2014 ' + money_(s.balanceToRelease) + ' still to release' : '');
   }
+  const raw = norm_(s.releaseStatus);
   return '<b>Not released</b>' +
-    (s.releaseStatus ? ' (' + esc_(s.releaseStatus) + ')' : '');
+    (!raw ? ' (no CA on file)' : lc_(raw) !== 'not released' ? ' (' + esc_(raw) + ')' : '');
 }
 
 function q4Html_(items) {
   if (!items.length) return '';
   const rows = items.map(function (s) {
     return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
-      s.gap ? esc_(s.gap) : 'no status change for ' + s.age + ' days',
-      esc_(s.status)];
+      s.reasons.map(esc_).join('<br>'), esc_(s.status)];
   });
-  return table_(['JO','Client','What is stale','Status'], rows);
+  return table_(['JO','Client','What to check','Status'], rows);
 }
 
 function q5aHtml_(items) {
@@ -133,4 +138,33 @@ function q5cHtml_(items) {
       '<b>' + s.age + 'd past ETA</b>, no arrival recorded', sevChip_(s.sev)];
   });
   return table_(['JO','Client','ETA was','Status','' ], rows);
+}
+
+/** One plain line per item, for the dry-run log. */
+function textLine_(key, s) {
+  const bits = [s.jo, s.client || '(no client)', key.toUpperCase(), s.sev];
+  if (key === 'q1') bits.push('arrived ' + fmtDate_(s.ata) + ', ' + s.age + 'd, storage in ' + s.daysToStorage + 'd');
+  if (key === 'q2') bits.push('ETA ' + fmtDate_(s.eta) + ', CA ' + s.funding);
+  if (key === 'q4') bits.push(s.reasons.join('; '));
+  if (key === 'q5a') bits.push('ETD ' + fmtDate_(s.etd) + ', ' + s.etdPast + 'd ago, no ETA');
+  if (key === 'q5b') bits.push(s.removed ? 'ETA removed' : 'ETA ' + fmtDate_(s.oldEta) + ' -> ' + fmtDate_(s.newEta));
+  if (key === 'q5c') bits.push(s.age + 'd past ETA');
+  return bits.join(' | ');
+}
+
+const RENDER_ = { q1: q1Html_, q2: q2Html_, q4: q4Html_, q5a: q5aHtml_, q5b: q5bHtml_, q5c: q5cHtml_ };
+
+/**
+ * Render sections worst-first. Each section: {key, title, note, items}.
+ * Red before amber; ties keep the order given.
+ */
+function sectionsHtml_(sections) {
+  const rank = function (sec) {
+    return sec.items.reduce(function (m, s) { return Math.max(m, SEV_RANK_[s.sev] || 0); }, 0);
+  };
+  return sections.filter(function (sec) { return sec.items.length; })
+    .map(function (sec, i) { return { sec: sec, i: i, r: rank(sec) }; })
+    .sort(function (a, b) { return (b.r - a.r) || (a.i - b.i); })
+    .map(function (x) { return section_(x.sec.title, x.sec.note, RENDER_[x.sec.key](x.sec.items)); })
+    .join('');
 }

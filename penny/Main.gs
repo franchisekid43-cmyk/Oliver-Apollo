@@ -20,20 +20,28 @@ function dryRun() { return execute_(true); }
 function runPenny() { return execute_(false); }
 
 /** Creates LogiSys Live + Archive with the correct headers, for testing
- *  before the importer exists. Safe to run more than once. */
+ *  before the importer exists. Safe to run more than once: a sheet that
+ *  already exists is never touched, empty or not. */
 function bootstrapFeedSheets() {
   const ss = feedBook_();
   [CONFIG.SHEET_LIVE, CONFIG.SHEET_ARCHIVE].forEach(function (name) {
-    const sh = ownSheet_(ss, name);
-    if (sh.getLastRow() === 0) {
-      sh.getRange(1, 1, 1, FEED_HEADERS.length).setValues([FEED_HEADERS])
-        .setFontWeight('bold');
-      sh.setFrozenRows(1);
-      Logger.log('Created "%s" with %s headers', name, FEED_HEADERS.length);
-    } else {
-      Logger.log('"%s" already has data — left untouched', name);
+    if (ss.getSheetByName(name)) {
+      Logger.log('"%s" already exists — left untouched', name);
+      return;
     }
+    createFeedSheet_(ss, name);
+    Logger.log('Created "%s" with %s headers', name, FEED_HEADERS.length);
   });
+}
+
+/** The one place Penny's code may create a feed sheet: brand new, headers only. */
+function createFeedSheet_(ss, name) {
+  if (name !== CONFIG.SHEET_LIVE && name !== CONFIG.SHEET_ARCHIVE) throw new Error('not a feed sheet: ' + name);
+  if (ss.getSheetByName(name)) throw new Error('"' + name + '" already exists — refusing to touch it');
+  const sh = ss.insertSheet(name);
+  sh.getRange(1, 1, 1, FEED_HEADERS.length).setValues([FEED_HEADERS]).setFontWeight('bold');
+  sh.setFrozenRows(1);
+  return sh;
 }
 
 /** ---------------- the run ---------------- */
@@ -50,61 +58,79 @@ function execute_(dry) {
     feed = loadFeed_();
     ss = feed.ss;
   } catch (e) {
-    return fail_(dry, 'Penny could not read the feed', e.message, log);
+    return fail_(dry, 'could not read the feed', e.message, log);
   }
 
   // Freshness gate — never run on stale data without saying so
   const stale = stalenessOfFeed_(feed.rows);
   if (stale) {
-    const msg = 'No pending checks ran today. ' + stale + '.';
-    say('FEED STALE: ' + msg);
-    if (!dry) {
-      sendTo_(CONFIG.RECIPIENTS.coo,
-        CONFIG.AGENT + ': LogiSys feed not received',
-        wrap_('<h2 style="margin:0 0 8px;font-size:17px;">LogiSys feed missing</h2>' +
-              '<p>' + esc_(msg) + '</p><p>Penny sent nothing to anyone this morning.</p>',
-              ''));
-    }
+    const day = fmtDateLong_(today_());
+    const msg = 'LogiSys feed for ' + day + ' has not arrived. No pending checks run today.';
+    say('FEED STALE: ' + msg + ' (' + stale + ')');
+    const e = { person: 'COO', to: CONFIG.RECIPIENTS.coo, jos: [], lines: [stale],
+      subject: CONFIG.AGENT + ': LogiSys feed for ' + day + ' not received',
+      html: wrap_('<h2 style="margin:0 0 8px;font-size:17px;">LogiSys feed missing</h2>' +
+                  '<p>' + esc_(msg) + '</p><p style="color:#5b6b60;">' + esc_(stale) + '.</p>' +
+                  '<p>Penny sent nothing to anyone else this morning.</p>', '') };
+    sendAll_([e], dry, say);
     return log.join('\n');
   }
 
-  const hmap = handlerMap_();
-  const prev = previousEtas_(ss);
-  const Q = buildQueues_(feed.rows, hmap, prev);
-  Q.q3 = newJos_(feed.rows, prev);
+  var Q, deliveredJos = {};
+  try {
+    const hmap = handlerMap_();
+    const prev = previousEtas_(ss);
+    Q = buildQueues_(feed.rows, hmap, prev);
+    Q.q3 = newJos_(feed.rows, prev);
+    Q.prevAvailable = prev.available;
+    currentRows_(feed.rows).rows.forEach(function (r) {
+      if (isDelivered_(r)) deliveredJos[norm_(r['JO Number'])] = true;
+    });
+  } catch (e) {
+    return fail_(dry, 'could not build the queues', e.message, log);
+  }
 
-  say('Feed rows: ' + feed.rows.length);
+  const notes = [];
+  if (caReadError_) notes.push('CA Tracker could not be read (' + caReadError_ +
+    ') — handlers come from LogiSys only and cash-advance state is unknown today.');
+  if (!Q.prevAvailable) notes.push('No earlier report in LogiSys Archive — ETA-change and new-JO checks skipped today.');
+
+  say('Feed rows: ' + feed.rows.length + ' (this morning\'s report: ' + currentRows_(feed.rows).rows.length +
+      ', out of scope before ' + fmtDateLong_(CONFIG.SCOPE_FROM) + ': ' + Q.outOfScope + ')');
   say('Q1 arrived-not-delivered: ' + Q.q1.length +
       ' (red+ ' + Q.q1.filter(function (x) { return x.sev === 'red' || x.sev === 'critical'; }).length + ')');
   say('Q2 arriving soon: ' + Q.q2.length);
   say('Q3 new JOs: ' + Q.q3.length);
-  say('Q4 stale status: ' + Q.q4.length);
+  say('Q4 status to check: ' + Q.q4.length);
   say('Q5a no ETA: ' + Q.q5a.length +
-      ' | Q5b ETA changed: ' + Q.q5b.length + (prev.available ? '' : ' (no prior report — skipped)') +
+      ' | Q5b ETA changed: ' + Q.q5b.length + (Q.prevAvailable ? '' : ' (no prior report — skipped)') +
       ' | Q5c ETA passed: ' + Q.q5c.length);
-  say('Date defects: ' + Q.defects.length);
+  say('Date defects: ' + Q.defects.length + ' | LogiSys ATA not used: ' + Q.untrusted.length);
 
-  // ---------- arrivals record (Penny's own sheet) ----------
-  var arr = null, monthly = null;
+  // ---------- arrivals record (Penny's own sheets) ----------
+  const arr = { summary: null, monthly: null };
   try {
     const ships = allShipmentsYtd_(ss, now.getFullYear());
-    if (!dry) arr = updateArrivals_(ss, ships, now.getFullYear());
-    else arr = { total: ships.length, note: 'dry run — not written' };
-    say('Arrivals YTD: ' + ships.length + ' shipments');
+    if (!dry) arr.summary = updateArrivals_(ss, ships, now.getFullYear());
+    say('Arrivals YTD: ' + ships.length + ' shipments' + (dry ? ' (dry run — not written)' : ''));
 
-    if (now.getDate() === CONFIG.MONTHLY_REPORT_DAY) {
-      const m = now.getMonth();                       // report the month just ended
-      const y = m === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      const mn = m === 0 ? 12 : m;
-      if (!dry) monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, y), y, mn);
-      say('Monthly report: ' + (monthly ? monthly.label + ' (' + monthly.total + ' rows)' : 'due today'));
+    const due = monthlyDue_(ss, now);
+    if (due) {
+      if (!dry) arr.monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, due.year), due.year, due.month);
+      say('Monthly report: ' + due.name + (dry ? ' is due (dry run — not written)' : ' (' + arr.monthly.total + ' rows)'));
     }
   } catch (e) {
     say('Arrivals step failed: ' + e.message);
+    notes.push('Penny Arrivals was not refreshed: ' + e.message);
   }
 
-  // ---------- compose and send ----------
-  const sent = dispatch_(Q, arr, monthly, dry, say);
+  // ---------- plan, self-check, send ----------
+  const emails = planEmails_(Q, arr, notes);
+  const problems = selfCheck_(emails, deliveredJos);
+  if (problems.length) {
+    return fail_(dry, 'self-check failed, nothing sent', problems.join('\n'), log);
+  }
+  const sent = sendAll_(emails, dry, say);
   say('Emails ' + (dry ? 'that would be sent' : 'sent') + ': ' + sent);
   return log.join('\n');
 }
@@ -113,7 +139,7 @@ function fail_(dry, subject, detail, log) {
   log.push('FAILURE: ' + subject + ' — ' + detail);
   Logger.log(log[log.length - 1]);
   if (!dry) {
-    sendTo_(CONFIG.RECIPIENTS.coo, CONFIG.AGENT + ': ' + subject,
+    sendTo_(CONFIG.RECIPIENTS.coo, CONFIG.AGENT + ': run stopped — ' + subject,
       wrap_('<h2 style="margin:0 0 8px;font-size:17px;">' + esc_(subject) + '</h2>' +
             '<pre style="white-space:pre-wrap;font-size:12px;">' + esc_(detail) + '</pre>' +
             '<p>Penny stopped and sent nothing else.</p>', ''));
@@ -127,134 +153,221 @@ function sendTo_(to, subject, html) {
   return true;
 }
 
-/** One email per person. Nothing for a person with nothing to act on. */
-function dispatch_(Q, arr, monthly, dry, say) {
-  const R = CONFIG.RECIPIENTS;
-  var count = 0;
-  const unroutable = { q1: [], q2: [], q5b: [], q5c: [] };
+/** ============ Plan the morning's emails ============
+ *  One email per person. Nothing for a person with nothing to act on.
+ *  Returns [{person, to, subject, html, jos, lines}] — nothing is sent here.
+ */
+const SHIPMENT_RISK_ = ['q1','q2','q5b','q5c'];       // may make a subject CRITICAL
+const TITLES_ = {
+  q1: 'Arrived, not yet delivered', q2: 'Arriving within ' + CONFIG.Q2_ETA_WINDOW + ' days',
+  q5b: 'ETA changed', q5c: 'ETA passed, no arrival recorded',
+  q4: 'Status to check in LogiSys', q5a: 'No ETA recorded'
+};
 
-  // ---- handlers: q1, q2, q5b, q5c (theirs only) ----
-  const byHandler = {};
-  function bucket(key, items) {
-    items.forEach(function (s) {
-      if (s.sev === 'green') return;
-      const h = s.handler;
-      const addr = h && R.handlers[h];
-      if (!h || !addr) { unroutable[key].push(s); return; }
-      byHandler[h] = byHandler[h] || { q1: [], q2: [], q5b: [], q5c: [] };
-      byHandler[h][key].push(s);
+function planEmails_(Q, arr, notes) {
+  const R = CONFIG.RECIPIENTS;
+  const nonGreen = function (s) { return s.sev !== 'green'; };
+  const emails = [];
+  const cooNotes = notes.slice();
+
+  // ---- route shipment-risk items to their handler ----
+  const byHandler = {}, ariel = { q1: [], q2: [], q5b: [], q5c: [], q4: [], q5a: [], copies: [] };
+  const rerouted = {};
+  SHIPMENT_RISK_.forEach(function (k) {
+    Q[k].filter(nonGreen).forEach(function (s) {
+      if (!s.rawHandler) { ariel[k].push(s); return; }          // handler not set -> Ariel
+      if (!s.handler || !R.handlers[s.handler]) {              // no address -> COO note
+        const who = s.handler || s.rawHandler;
+        (rerouted[who] = rerouted[who] || { known: !!s.handler, jos: [] }).jos.push(s.jo);
+        return;
+      }
+      const b = byHandler[s.handler] = byHandler[s.handler] || { q1: [], q2: [], q5b: [], q5c: [] };
+      b[k].push(s);
+    });
+  });
+  ariel.q4 = Q.q4;
+  ariel.q5a = Q.q5a.filter(nonGreen);
+  ariel.copies = Q.q5c.filter(function (s) { return s.sev === 'red' && s.rawHandler; });
+
+  function subjectFor(n, critical) {
+    return (critical ? 'CRITICAL — ' : '') + CONFIG.AGENT + ': ' + n +
+           (n === 1 ? ' shipment needs action' : ' shipments need action');
+  }
+  function josOf(lists) {
+    const set = {};
+    lists.forEach(function (l) { l.forEach(function (s) { set[s.jo] = true; }); });
+    return Object.keys(set);
+  }
+  function anyRed(lists) {
+    return lists.some(function (l) {
+      return l.some(function (s) { return s.sev === 'red' || s.sev === 'critical'; });
     });
   }
-  bucket('q1', Q.q1); bucket('q2', Q.q2); bucket('q5b', Q.q5b); bucket('q5c', Q.q5c);
+  function linesOf(map) {
+    const out = [];
+    Object.keys(map).forEach(function (k) {
+      map[k].forEach(function (s) { out.push(textLine_(k === 'copies' ? 'q5c' : k, s)); });
+    });
+    return out;
+  }
+  function greet(name) {
+    return '<h2 style="margin:0 0 2px;font-size:17px;">Good morning, ' + esc_(name) + '</h2>' +
+           '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>';
+  }
 
+  // ---- handlers ----
   Object.keys(byHandler).forEach(function (h) {
     const b = byHandler[h];
-    const n = b.q1.length + b.q2.length + b.q5b.length + b.q5c.length;
-    if (!n) return;
-    const worst = [b.q1, b.q2, b.q5b, b.q5c].reduce(function (acc, arr2) {
-      arr2.forEach(function (s) {
-        if (s.sev === 'critical') acc = 'critical';
-        else if (s.sev === 'red' && acc !== 'critical') acc = 'red';
-        else if (acc === 'green') acc = 'amber';
-      });
-      return acc;
-    }, 'green');
-    const crit = (worst === 'critical' || worst === 'red');
-    const subject = (crit ? 'CRITICAL — ' : '') + CONFIG.AGENT + ': ' +
-                    n + ' shipment' + (n === 1 ? '' : 's') + ' need action';
-    const html = wrap_(
-      '<h2 style="margin:0 0 2px;font-size:17px;">Good morning, ' + esc_(h.split(' ')[0]) + '</h2>' +
-      '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>' +
-      section_('Arrived, not yet delivered',
-        'Storage is free for ' + CONFIG.STORAGE_FREE_DAYS + ' days, demurrage for ' +
-        CONFIG.DEMURRAGE_FREE_DAYS + '.', q1Html_(b.q1)) +
-      section_('Arriving within ' + CONFIG.Q2_ETA_WINDOW + ' days', '', q2Html_(b.q2)) +
-      section_('ETA changed', 'Your plan may need adjusting.', q5bHtml_(b.q5b)) +
-      section_('ETA passed, no arrival recorded', '', q5cHtml_(b.q5c)),
-      '');
-    if (!dry) sendTo_(R.handlers[h], subject, html);
-    say('  -> ' + h + ' (' + n + ' items) ' + (dry ? '[dry]' : 'sent'));
-    count++;
+    const lists = [b.q1, b.q2, b.q5b, b.q5c];
+    const jos = josOf(lists);
+    emails.push({
+      person: h, to: R.handlers[h], jos: jos, lines: linesOf(b),
+      subject: subjectFor(jos.length, anyRed(lists)),
+      html: wrap_(greet(h.split(' ')[0]) + sectionsHtml_([
+        { key: 'q1', title: TITLES_.q1, items: b.q1,
+          note: 'Storage is free for ' + CONFIG.STORAGE_FREE_DAYS + ' days, demurrage for ' +
+                CONFIG.DEMURRAGE_FREE_DAYS + '.' },
+        { key: 'q2', title: TITLES_.q2, items: b.q2, note: '' },
+        { key: 'q5b', title: TITLES_.q5b, items: b.q5b, note: 'Your plan may need adjusting.' },
+        { key: 'q5c', title: TITLES_.q5c, items: b.q5c, note: '' }
+      ]), '')
+    });
   });
 
-  // ---- Ariel: q4 stale, q5a no ETA ----
-  const ariel = { q4: Q.q4, q5a: Q.q5a.filter(function (s) { return s.sev !== 'green'; }) };
-  if (ariel.q4.length + ariel.q5a.length) {
-    const n = ariel.q4.length + ariel.q5a.length;
-    const subject = CONFIG.AGENT + ': ' + n + ' shipment' + (n === 1 ? '' : 's') + ' need encoding';
-    const html = wrap_(
-      '<h2 style="margin:0 0 2px;font-size:17px;">Good morning, Ariel</h2>' +
-      '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>' +
-      section_('No ETA recorded yet', 'These cannot be planned until an ETA is in LogiSys.',
-               q5aHtml_(ariel.q5a)) +
-      section_('Status not updated in ' + CONFIG.Q4_STALE_RED + '+ days', '', q4Html_(ariel.q4)),
-      '');
-    const to = R.support || R.coo;
-    if (!dry) sendTo_(to, subject + (R.support ? '' : ' [Ariel address not set]'), html);
-    say('  -> Ariel (' + n + ' items) ' + (dry ? '[dry]' : 'sent to ' + to));
-    count++;
+  // ---- Ariel: stale status, no ETA, red 5c copies, and shipments with no handler ----
+  const unassigned = [ariel.q1, ariel.q2, ariel.q5b, ariel.q5c];
+  const arielLists = unassigned.concat([ariel.q4, ariel.q5a, ariel.copies]);
+  const arielJos = josOf(arielLists);
+  if (arielJos.length) {
+    if (!R.support) {
+      cooNotes.push('Ariel has no email address set — his ' + arielJos.length +
+                    ' shipment(s) are in this email: ' + arielJos.join(', ') + '.');
+    } else {
+      const hn = ' — handler not set';
+      emails.push({
+        person: 'Ariel', to: R.support, jos: arielJos, lines: linesOf(ariel),
+        subject: subjectFor(arielJos.length, anyRed(unassigned)),
+        html: wrap_(greet('Ariel') + sectionsHtml_([
+          { key: 'q1', title: TITLES_.q1 + hn, items: ariel.q1, note: 'No account handler in LogiSys or the CA Tracker.' },
+          { key: 'q2', title: TITLES_.q2 + hn, items: ariel.q2, note: 'No account handler in LogiSys or the CA Tracker.' },
+          { key: 'q5b', title: TITLES_.q5b + hn, items: ariel.q5b, note: '' },
+          { key: 'q5c', title: TITLES_.q5c + hn, items: ariel.q5c, note: '' },
+          { key: 'q5a', title: 'No ETA recorded — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
+            items: ariel.q5a, note: 'These cannot be planned until an ETA is in LogiSys.' },
+          { key: 'q4', title: TITLES_.q4, items: ariel.q4, note: '' },
+          { key: 'q5c', title: TITLES_.q5c, items: ariel.copies, note: 'For your information — the handler has these too.' }
+        ]), '')
+      });
+    }
   }
 
   // ---- COO: everything ----
-  const cooCount = Q.q1.filter(function (s) { return s.sev !== 'green'; }).length +
-                   Q.q2.length + Q.q3.length + Q.q4.length +
-                   Q.q5a.length + Q.q5b.length + Q.q5c.length;
-  const anyRed = Q.q1.some(function (s) { return s.sev === 'red' || s.sev === 'critical'; }) ||
-                 Q.q5b.some(function (s) { return s.sev === 'red'; }) ||
-                 Q.q5c.some(function (s) { return s.sev === 'red'; });
-  if (cooCount || arr) {
-    const inFree = Q.q1.filter(function (s) { return !s.storageRunning; }).length;
-    const running = Q.q1.filter(function (s) { return s.storageRunning; }).length;
-    var head = '<h2 style="margin:0 0 2px;font-size:17px;">Pending shipments — ' +
-               fmtDateLong_(today_()) + '</h2>';
-    var kpi = '<table role="presentation" style="border-collapse:collapse;margin:12px 0;font-size:13px;">' +
-      '<tr><td style="padding:4px 18px 4px 0;">Arrived, not delivered</td><td><b>' + Q.q1.length + '</b></td></tr>' +
-      '<tr><td style="padding:4px 18px 4px 0;">Inside free time</td><td><b>' + inFree + '</b></td></tr>' +
-      '<tr><td style="padding:4px 18px 4px 0;color:#b91c1c;">Storage already running</td><td><b style="color:#b91c1c;">' + running + '</b></td></tr>' +
-      (arr && arr.median !== '' && arr.median !== undefined ?
-        '<tr><td style="padding:4px 18px 4px 0;">Median ATA to delivery</td><td><b>' + arr.median + ' days</b></td></tr>' : '') +
-      (arr && arr.total ? '<tr><td style="padding:4px 18px 4px 0;">Shipments year to date</td><td><b>' + arr.total + '</b></td></tr>' : '') +
-      '</table>';
-    var body = head + kpi +
-      section_('Arrived, not yet delivered', '', q1Html_(Q.q1.filter(function (s) { return s.sev !== 'green'; }))) +
-      section_('Arriving within ' + CONFIG.Q2_ETA_WINDOW + ' days', '', q2Html_(Q.q2)) +
-      section_('ETA changed', '', q5bHtml_(Q.q5b)) +
-      section_('ETA passed, no arrival', '', q5cHtml_(Q.q5c)) +
-      section_('No ETA recorded', '', q5aHtml_(Q.q5a)) +
-      section_('Stale status', '', q4Html_(Q.q4));
+  Object.keys(rerouted).forEach(function (who) {
+    const x = rerouted[who];
+    cooNotes.push((x.known ? who + ' has no email address set' :
+                   'Account handler "' + who + '" is not in Penny\'s recipient list, so has no address') +
+                  ' — ' + x.jos.length + ' shipment(s) for them are in this email: ' + x.jos.join(', ') + '.');
+  });
+  const coo = { q1: Q.q1.filter(nonGreen), q2: Q.q2, q5b: Q.q5b, q5c: Q.q5c, q4: Q.q4, q5a: Q.q5a.filter(nonGreen) };
+  const cooLists = [coo.q1, coo.q2, coo.q5b, coo.q5c, coo.q4, coo.q5a];
+  const cooJos = josOf(cooLists);
+  if (!cooJos.length && !Q.q3.length && !cooNotes.length && !arr.monthly) return emails;
 
-    if (Q.q3.length) {
-      body += section_('New job orders encoded', Q.q3.length + ' since the last report',
-        table_(['JO','Client','Commodity','Mode','ETA'], Q.q3.map(function (r) {
-          return ['<b>' + esc_(norm_(r['JO Number'])) + '</b>', esc_(norm_(r['Client'])),
-                  esc_(norm_(r['Commodity'])), esc_(modeOf_(r)),
-                  fmtDate_(validDate_(r['ETA'])) || 'no ETA'];
-        })));
-    }
-    if (monthly) {
-      body += section_('Monthly arrivals report generated', monthly.label,
-        table_(['Register','Rows'], [['SEA FCL', monthly.fcl], ['SEA LCL', monthly.lcl],
-                                     ['AIR', monthly.air], ['<b>Total</b>', '<b>' + monthly.total + '</b>']]));
-    }
-    // data gaps
-    const gaps = [];
-    Q.defects.forEach(function (d) {
-      gaps.push([esc_(d.jo), esc_(d.client), esc_(d.field), esc_(d.value)]);
-    });
-    ['q1','q2','q5b','q5c'].forEach(function (k) {
-      unroutable[k].forEach(function (s) {
-        gaps.push([esc_(s.jo), esc_(s.client), 'Account Handler', 'not set — could not route']);
-      });
-    });
-    if (gaps.length) body += section_('Data gaps', 'Not used in any calculation.',
-      table_(['JO','Client','Field','Value'], gaps));
-
-    const subject = (anyRed ? 'CRITICAL — ' : '') + CONFIG.AGENT +
-                    ': ' + Q.q1.length + ' pending, ' + running + ' accruing charges';
-    if (!dry) sendTo_(R.coo, subject, wrap_(body, ''));
-    say('  -> COO ' + (dry ? '[dry]' : 'sent'));
-    count++;
+  const inFree = Q.q1.filter(function (s) { return !s.storageRunning; }).length;
+  const storage = Q.q1.filter(function (s) { return s.storageRunning && !s.demurrageRunning; }).length;
+  const demurrage = Q.q1.filter(function (s) { return s.demurrageRunning; }).length;
+  const unconfirmed = Q.q4.filter(function (s) {
+    return s.reasons.some(function (r) { return /arrived per status|ATA is blank/.test(r); });
+  }).length;
+  function kv(k, v, red) {
+    return '<tr><td style="padding:4px 18px 4px 0;' + (red ? 'color:#b91c1c;' : '') + '">' + k +
+           '</td><td><b' + (red ? ' style="color:#b91c1c;"' : '') + '>' + v + '</b></td></tr>';
+  }
+  var body = '<h2 style="margin:0 0 2px;font-size:17px;">Pending shipments — ' + fmtDateLong_(today_()) + '</h2>' +
+    '<table role="presentation" style="border-collapse:collapse;margin:12px 0;font-size:13px;">' +
+    kv('Arrived, not delivered', Q.q1.length) +
+    kv('Inside free time', inFree) +
+    kv('Storage running', storage, storage > 0) +
+    kv('Storage + demurrage running', demurrage, demurrage > 0) +
+    (unconfirmed ? kv('Arrived per status, date not confirmed', unconfirmed) : '') +
+    (arr.summary && arr.summary.median !== '' ?
+      kv('Median ATA to delivery', arr.summary.median + ' days (p75 ' + arr.summary.p75 + ')') : '') +
+    (arr.summary && arr.summary.total ? kv('Shipments year to date', arr.summary.total) : '') +
+    '</table>';
+  if (cooNotes.length) {
+    body += '<div style="background:#fff7e6;border-left:3px solid #b45309;padding:8px 10px;margin:8px 0;font-size:13px;">' +
+            cooNotes.map(esc_).join('<br>') + '</div>';
+  }
+  body += sectionsHtml_([
+    { key: 'q1', title: TITLES_.q1, items: coo.q1, note: '' },
+    { key: 'q2', title: TITLES_.q2, items: coo.q2, note: '' },
+    { key: 'q5b', title: TITLES_.q5b, items: coo.q5b, note: '' },
+    { key: 'q5c', title: TITLES_.q5c, items: coo.q5c, note: '' },
+    { key: 'q5a', title: TITLES_.q5a, items: coo.q5a, note: '' },
+    { key: 'q4', title: TITLES_.q4, items: coo.q4, note: 'Ariel has these.' }
+  ]);
+  if (Q.q3.length) {
+    body += section_('New job orders encoded', Q.q3.length + ' since the last report',
+      table_(['JO','Client','Commodity','Mode','ETA'], Q.q3.map(function (r) {
+        return ['<b>' + esc_(r.jo) + '</b>', esc_(r.client), esc_(r.commodity), esc_(r.mode),
+                fmtDate_(r.eta) || 'no ETA'];
+      })));
+  }
+  if (Q.untrusted.length) {
+    body += section_('LogiSys ATA not used', 'ATA equals ETA and no post-arrival milestone — treated as not yet arrived.',
+      table_(['JO','Client','ATA = ETA','Status'], Q.untrusted.map(function (s) {
+        return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client), fmtDate_(s.eta), esc_(s.status)];
+      })));
+  }
+  if (arr.monthly) {
+    const m = arr.monthly;
+    body += section_('Monthly arrivals report generated', m.label,
+      table_(['Register','Rows'], [['SEA FCL', m.fcl], ['SEA LCL', m.lcl],
+                                   ['AIR', m.air], ['<b>Total</b>', '<b>' + m.total + '</b>']]));
   }
 
-  return count;
+  var subject;
+  if (cooJos.length) subject = subjectFor(cooJos.length, anyRed([coo.q1, coo.q2, coo.q5b, coo.q5c]));
+  else if (Q.q3.length) subject = CONFIG.AGENT + ': ' + Q.q3.length + ' new job order' + (Q.q3.length === 1 ? '' : 's') + ' encoded';
+  else if (arr.monthly) subject = CONFIG.AGENT + ': monthly arrivals report ready';
+  else subject = CONFIG.AGENT + ': run notes';
+
+  emails.push({ person: 'COO', to: R.coo, subject: subject, jos: cooJos,
+                lines: linesOf(coo).concat(cooNotes), html: wrap_(body, '') });
+  return emails;
+}
+
+/**
+ * soul.md's self-check, as code. Returns a list of problems; any problem
+ * means nothing is sent to anyone and the COO is told instead.
+ */
+function selfCheck_(emails, deliveredJos) {
+  const R = CONFIG.RECIPIENTS;
+  const allowed = [R.coo, R.support].concat(Object.keys(R.handlers).map(function (h) { return R.handlers[h]; }))
+                    .filter(function (a) { return a; });
+  const problems = [], seen = {};
+  const forbidden = function (s) { return containsAny_(s, CONFIG.NEVER_CONTACT); };
+  Object.keys(R.handlers).forEach(function (h) {
+    if (forbidden(h)) problems.push('RECIPIENTS contains a person Penny never contacts: ' + h);
+  });
+  emails.forEach(function (e) {
+    if (!/^(CRITICAL — )?Penny: /.test(e.subject)) problems.push('subject does not start with "Penny:" — ' + e.subject);
+    if (seen[e.person]) problems.push(e.person + ' would receive two emails');
+    seen[e.person] = true;
+    if (!e.to || allowed.indexOf(e.to) === -1) problems.push('address not in RECIPIENTS: ' + e.to);
+    if (forbidden(e.person)) problems.push('never-contact recipient: ' + e.person);
+    e.jos.forEach(function (jo) {
+      if (deliveredJos[jo]) problems.push(jo + ' is delivered (Nico\'s) but is in ' + e.person + '\'s email');
+    });
+  });
+  return problems;
+}
+
+function sendAll_(emails, dry, say) {
+  emails.forEach(function (e) {
+    say('  -> ' + e.person + ' <' + e.to + '> ' + e.subject + (dry ? ' [dry]' : ''));
+    if (dry) e.lines.forEach(function (l) { say('       ' + l); });
+    else sendTo_(e.to, e.subject, e.html);
+  });
+  return emails.length;
 }
