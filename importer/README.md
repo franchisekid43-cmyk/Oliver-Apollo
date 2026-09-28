@@ -3,7 +3,7 @@
 Plumbing, not an agent. It reads the daily LogiSys register emails (SEA and AIR), parses the
 attachments and writes **exactly two sheets, both its own**: `LogiSys Live` and `LogiSys Archive`.
 Penny, Nico and the Command Center read them. It emails nobody but the COO, and only when
-something went wrong. Tested: **58 checks passing** (`node importer_tests.js`).
+something went wrong. Tested: **64 checks passing** (`node importer_tests.js`).
 
 Spec: `docs/PROMPT_logisys_importer.md` (Part A. Part B, the shared outbox, is not built).
 
@@ -41,7 +41,7 @@ the Gmail of the account that owns the project, so:
 
 ## What it writes
 
-**`LogiSys Live`** — one row per JO, the 32 headers in `FEED_HEADERS` (identical to Penny's;
+**`LogiSys Live`** — one row per JO, the 34 headers in `FEED_HEADERS` (identical to Penny's;
 the test suite checks it). Built entirely in memory, validated, then written in one operation.
 An older report never overwrites a newer one. If a sheet called `LogiSys Live` exists without
 these headers, the importer refuses to touch it.
@@ -54,6 +54,10 @@ Three columns are the importer's, not LogiSys's:
 | `Last Updated` | the report date on which the Status last changed (drives Penny's 8-day stale check) |
 | `Delivered` | the report date on which the JO was **first** reported with a delivered status — LogiSys carries no delivery date, so this is the earliest date the feed can evidence |
 | `Source Report Date` | the date of the email the row came from (Penny's freshness gate) |
+| `Completed Milestone Date`, `Job Completed On` | as LogiSys writes them; the Command Center takes the delivery date from these |
+
+When two registers arrive the same day (the Status Register and the full register), a column
+only one of them carries is never blanked by the other.
 
 **`LogiSys Archive`** — append-only, never edited. A row is appended whenever a JO is new or any
 field changed. Penny reads a JO's latest archived state before today as "the previous report".

@@ -92,10 +92,13 @@ const FEED_HEADERS = [
   'Place Of Delivery','Shipment Date','ETD','ATD','ETA','ATA',
   'Containers 20ft','Containers 40ft','Containers 45ft','Container Nos',
   'Total Packages','Unit','Goods Description','Airline','Flight No',
-  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date'
+  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date',
+  'Completed Milestone Date','Job Completed On'
 ];
 
-const DATE_FIELDS = ['Shipment Date','ETD','ATD','ETA','ATA'];
+const DATE_FIELDS = ['Shipment Date','ETD','ATD','ETA','ATA','Completed Milestone Date','Job Completed On'];
+// Added after the first import (28 Sep 2026). An older sheet without them is upgraded in place.
+const ADDED_HEADERS = ['Completed Milestone Date','Job Completed On'];
 const NUMBER_FIELDS = ['Containers 20ft','Containers 40ft','Containers 45ft','Total Packages'];
 
 // How each LogiSys register's columns map onto the schema above. Header
@@ -112,6 +115,8 @@ const SEA_MAP = {
   '45 Feet Containers':'Containers 45ft', 'Container Nos.':'Container Nos',
   'Total Packages':'Total Packages', 'Unit':'Unit',
   'Good Desc':'Goods Description', 'Status':'Status',
+  'Completed Milestone Date':'Completed Milestone Date', 'Job Completed On':'Job Completed On',
+  'No. Of Pkg':'Total Packages',               // the Status Register's name for it
   'Account Handler':'Account Handler'          // only if LogiSys ever adds it
 };
 const AIR_MAP = {
@@ -122,8 +127,11 @@ const AIR_MAP = {
   'Shipment Date':'Shipment Date', 'ETD':'ETD', 'ATD':'ATD',
   'ETA':'ETA', 'ATA':'ATA', 'Total Packages':'Total Packages', 'Unit':'Unit',
   'Good Desc':'Goods Description', 'Status':'Status',
+  'Completed Milestone Date':'Completed Milestone Date', 'Job Completed On':'Job Completed On',
+  'No. Of Pkg':'Total Packages',
   'Account Handler':'Account Handler'
 };
 
+// Header text is matched without regard to capitals ("BL No" = "BL NO").
 // A register missing any of these is rejected whole: nothing is written.
 const REQUIRED_SOURCE = ['Shipment No','Consignee','ETD','ETA','ATA','Status'];

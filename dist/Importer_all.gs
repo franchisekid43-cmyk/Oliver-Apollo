@@ -95,10 +95,13 @@ const FEED_HEADERS = [
   'Place Of Delivery','Shipment Date','ETD','ATD','ETA','ATA',
   'Containers 20ft','Containers 40ft','Containers 45ft','Container Nos',
   'Total Packages','Unit','Goods Description','Airline','Flight No',
-  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date'
+  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date',
+  'Completed Milestone Date','Job Completed On'
 ];
 
-const DATE_FIELDS = ['Shipment Date','ETD','ATD','ETA','ATA'];
+const DATE_FIELDS = ['Shipment Date','ETD','ATD','ETA','ATA','Completed Milestone Date','Job Completed On'];
+// Added after the first import (28 Sep 2026). An older sheet without them is upgraded in place.
+const ADDED_HEADERS = ['Completed Milestone Date','Job Completed On'];
 const NUMBER_FIELDS = ['Containers 20ft','Containers 40ft','Containers 45ft','Total Packages'];
 
 // How each LogiSys register's columns map onto the schema above. Header
@@ -115,6 +118,8 @@ const SEA_MAP = {
   '45 Feet Containers':'Containers 45ft', 'Container Nos.':'Container Nos',
   'Total Packages':'Total Packages', 'Unit':'Unit',
   'Good Desc':'Goods Description', 'Status':'Status',
+  'Completed Milestone Date':'Completed Milestone Date', 'Job Completed On':'Job Completed On',
+  'No. Of Pkg':'Total Packages',               // the Status Register's name for it
   'Account Handler':'Account Handler'          // only if LogiSys ever adds it
 };
 const AIR_MAP = {
@@ -125,9 +130,12 @@ const AIR_MAP = {
   'Shipment Date':'Shipment Date', 'ETD':'ETD', 'ATD':'ATD',
   'ETA':'ETA', 'ATA':'ATA', 'Total Packages':'Total Packages', 'Unit':'Unit',
   'Good Desc':'Goods Description', 'Status':'Status',
+  'Completed Milestone Date':'Completed Milestone Date', 'Job Completed On':'Job Completed On',
+  'No. Of Pkg':'Total Packages',
   'Account Handler':'Account Handler'
 };
 
+// Header text is matched without regard to capitals ("BL No" = "BL NO").
 // A register missing any of these is rejected whole: nothing is written.
 const REQUIRED_SOURCE = ['Shipment No','Consignee','ETD','ETA','ATA','Status'];
 
@@ -375,19 +383,25 @@ function readAttachment_(blob) {
 function parseRegister_(values, reportDate) {
   var h = -1;
   for (var i = 0; i < Math.min(values.length, IMPORTER.HEADER_SEARCH_ROWS); i++) {
-    if (values[i].some(function (c) { return clean_(c) === 'Shipment No'; })) { h = i; break; }
+    if (values[i].some(function (c) { return clean_(c).toUpperCase() === 'SHIPMENT NO'; })) { h = i; break; }
   }
   if (h === -1) return null;
 
-  const headers = values[h].map(clean_);
+  const headers = values[h].map(function (c) { return clean_(c).toUpperCase(); });   // "BL No" = "BL NO"
   const kind = headers.indexOf('BL NO') !== -1 ? 'SEA' : headers.indexOf('AWB NO') !== -1 ? 'AIR' : null;
   if (!kind) throw new Error('register has neither "BL NO" nor "AWB NO" — cannot tell SEA from AIR');
-  const map = kind === 'SEA' ? SEA_MAP : AIR_MAP;
-  const missing = REQUIRED_SOURCE.filter(function (x) { return headers.indexOf(x) === -1; });
+  const src = kind === 'SEA' ? SEA_MAP : AIR_MAP;
+  const map = {};
+  Object.keys(src).forEach(function (k) { map[k.toUpperCase()] = src[k]; });
+  const missing = REQUIRED_SOURCE.filter(function (x) { return headers.indexOf(x.toUpperCase()) === -1; });
   if (missing.length) throw new Error(kind + ' register is missing required header(s): ' + missing.join(', '));
 
   const col = {};
   headers.forEach(function (x, j) { if (map[x] && !(map[x] in col)) col[map[x]] = j; });
+  // Fields this register actually carries. Another register the same day may carry others;
+  // a column this one lacks must not blank what that one wrote.
+  const present = Object.keys(col).concat(['JO Number', 'Mode', 'Stage', 'Source Report Date'],
+                                          kind === 'AIR' ? ['Cargo Type'] : []);
 
   const issues = [], byJo = {}, order = [];
   for (var r = h + 1; r < values.length; r++) {
@@ -436,7 +450,7 @@ function parseRegister_(values, reportDate) {
     else order.push(jo);
     byJo[jo] = o;
   }
-  return { kind: kind, rows: order.map(function (jo) { return byJo[jo]; }), issues: issues };
+  return { kind: kind, rows: order.map(function (jo) { return byJo[jo]; }), issues: issues, present: present };
 }
 
 function stageOf_(status) {
@@ -470,6 +484,13 @@ function planWrite_(ss, good) {
         const prev = live[jo];
         const prevSrd = prev ? asDay_(prev['Source Report Date']) : null;
         if (prevSrd && prevSrd > o['Source Report Date']) return;      // an older report never wins
+        // Same day, another register: keep what it wrote for columns this one doesn't carry.
+        if (prevSrd && prevSrd.getTime() === o['Source Report Date'].getTime() && reg.present) {
+          FEED_HEADERS.forEach(function (f) {
+            if (reg.present.indexOf(f) === -1 && ['Last Updated', 'Delivered'].indexOf(f) === -1 &&
+                prev[f] !== undefined && prev[f] !== '') o[f] = prev[f];
+          });
+        }
 
         // Last Updated: the report date on which the Status last changed
         o['Last Updated'] = (prev && clean_(prev['Status']) === clean_(o['Status']) && asDay_(prev['Last Updated']))
@@ -569,13 +590,27 @@ function ownedSheet_(ss, name) {
     return sh;
   }
   checkContract_(sh);
+  // Upgrade a sheet written before ADDED_HEADERS existed: they go after the old columns,
+  // so every existing column keeps its position.
+  if (sh.getLastRow() > 0) {
+    const hdr = sh.getDataRange().getValues()[0].map(clean_);
+    if (ADDED_HEADERS.some(function (f) { return hdr.indexOf(f) === -1; })) {
+      const base = FEED_HEADERS.length - ADDED_HEADERS.length;
+      if (hdr.slice(0, base).join('|') !== FEED_HEADERS.slice(0, base).join('|')) {
+        throw new Error('"' + name + '" has its columns in an unexpected order — refusing to upgrade it');
+      }
+      sh.getRange(1, 1, 1, FEED_HEADERS.length).setValues([FEED_HEADERS]);
+    }
+  }
   return sh;
 }
 
 function checkContract_(sh) {
   if (sh.getLastRow() === 0) return;
   const hdr = sh.getDataRange().getValues()[0].map(clean_);
-  const missing = FEED_HEADERS.filter(function (f) { return hdr.indexOf(f) === -1; });
+  const missing = FEED_HEADERS.filter(function (f) {
+    return hdr.indexOf(f) === -1 && ADDED_HEADERS.indexOf(f) === -1;      // added columns are upgraded, not required
+  });
   if (missing.length) {
     throw new Error('"' + sh.getName() + '" does not carry the LogiSys Live headers (missing ' +
                     missing.join(', ') + ') — refusing to overwrite it');
@@ -591,7 +626,7 @@ function readOwned_(ss, name) {
   const hdr = v[0].map(clean_);
   return v.slice(1).filter(function (r) { return clean_(r[hdr.indexOf('JO Number')]); }).map(function (r) {
     const o = {};
-    FEED_HEADERS.forEach(function (f) { o[f] = r[hdr.indexOf(f)]; });
+    FEED_HEADERS.forEach(function (f) { const i = hdr.indexOf(f); o[f] = i >= 0 ? r[i] : ''; });
     return o;
   });
 }

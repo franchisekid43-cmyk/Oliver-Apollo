@@ -82,7 +82,8 @@ const LIVE_HEADERS = [
   'Place Of Delivery', 'Shipment Date', 'ETD', 'ATD', 'ETA', 'ATA',
   'Containers 20ft', 'Containers 40ft', 'Containers 45ft', 'Container Nos',
   'Total Packages', 'Unit', 'Goods Description', 'Airline', 'Flight No',
-  'Status', 'Stage', 'Delivered', 'Account Handler', 'Last Updated', 'Source Report Date'
+  'Status', 'Stage', 'Delivered', 'Account Handler', 'Last Updated', 'Source Report Date',
+  'Completed Milestone Date', 'Job Completed On'
 ];
 function toRow(o) { return LIVE_HEADERS.map(h => (h in o ? o[h] : '')); }
 

@@ -165,7 +165,8 @@ function isDelivered_(r) {
 
 /** The date a shipment was delivered, if known, for lead-time medians. */
 function deliveredOn_(r) {
-  return validDate_(r['Delivery Date']) || validDate_(r['Delivered']);
+  // LogiSys's own completion date first; the importer's "first reported delivered" as fallback.
+  return validDate_(r['Delivery Date']) || validDate_(r['Job Completed On']) || validDate_(r['Delivered']);
 }
 
 /** Match a free-typed name ("KIM KONG", "kim angelu kong") to a handler. */

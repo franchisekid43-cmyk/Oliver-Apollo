@@ -345,6 +345,38 @@ test('rebuildFeed — setup-day reset, refused once there is history', () => {
   check('refused once the archive holds several report dates', refused);
 });
 
+test('Status Register + full register the same day: nothing blanked, headers any case', () => {
+  const STAT_H = ['Shipment No', 'HBL No', 'BL No', 'FSA Number (UDF)', 'Cargo Type', 'Consignee', 'No. Of Pkg', 'Unit',
+                  'ETD', 'ETA', 'ATA', 'Status', 'Completed Milestone Date', 'Job Completed On'];
+  const stat = csvAtt('status.csv', PRE.concat([STAT_H, ['IMP-SD', 'H1', 'B1', '1294-07-26', 'FCL', 'UNILAB INC', '7', 'PLT',
+                  '2026-09-01', '2026-09-05', '2026-09-06', 'Job Completed', '2026-09-20', '2026-09-21']]));
+  const full = csvAtt('full.csv', PRE.concat([SEA_H, seaRow({ 'Shipment No': 'IMP-SD', 'BL NO': 'B1', 'Consignee': 'UNILAB INC',
+                  'Cargo Type': 'FCL', '20 Feet Containers': '1', 'ETD': '2026-09-01', 'ETA': '2026-09-05', 'ATA': '2026-09-06', 'Status': 'Job Completed' })]));
+  world([email('SEA Shipment Register Status', new FakeDate(2026, 8, 28, 6, 0), [stat]),
+         email('SEA Shipment Register', new FakeDate(2026, 8, 28, 6, 1), [full])]);
+  W.run('runImporter()');
+  const o = liveObjs().find(x => x['JO Number'] === 'IMP-SD');
+  check('"BL No" (mixed case) is recognised as a SEA register', !!o);
+  check('Job Completed On from the status report survives the full register', o && o['Job Completed On'] && o['Job Completed On'].getDate() === 21);
+  check('container count from the full register is kept', o && o['Containers 20ft'] === 1);
+});
+
+test('A LogiSys Live written before the new columns is upgraded in place', () => {
+  world([email('SEA Shipment Register', TODAY_0700, [seaReport()])]); W.run('runImporter()');
+  const live = W.feed.getSheetByName('LogiSys Live');
+  live.rows = live.rows.map(r => r.slice(0, 32));                       // the 28 Sep sheet: 32 columns
+  const arch = W.feed.getSheetByName('LogiSys Archive');
+  arch.rows = arch.rows.map(r => r.slice(0, 32));
+  setNow(2026, 9, 29, 6, 15);
+  const changed = csvAtt('sea.csv', PRE.concat([SEA_H, seaRow({ 'Shipment No': 'IMP0926-1280', 'BL NO': 'BL2', 'Consignee': 'ACME',
+    'Cargo Type': 'LCL', 'ETD': '15-Sep-2026', 'ETA': '2026-09-30', 'Status': 'Container Discharged' })]));
+  world([email('SEA Shipment Register', new FakeDate(2026, 8, 29, 6, 0), [changed])], { keepFeed: true }); W.run('runImporter()');
+  check('Live now has the two new columns', live.rows[0].length === 34 && live.rows[0][33] === 'Job Completed On');
+  check('Archive header upgraded too', arch.rows[0][33] === 'Job Completed On');
+  check('no failure email', !W.mail.some(m => /not imported|run failed/.test(m.subject)), W.mail.map(m => m.subject).join(' | '));
+  setNow(2026, 9, 28, 7, 15);
+});
+
 test('Write audit — only LogiSys Live and LogiSys Archive', () => {
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n');
   const WRITE = /\.(setValues?|appendRow|clear\w*|deleteRows?|deleteColumns?|deleteSheet|insertSheet|insertRows?\w*|setFormulas?)\s*\(/g;

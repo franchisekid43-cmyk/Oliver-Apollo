@@ -196,7 +196,8 @@ const FEED_HEADERS = [
   'Place Of Delivery','Shipment Date','ETD','ATD','ETA','ATA',
   'Containers 20ft','Containers 40ft','Containers 45ft','Container Nos',
   'Total Packages','Unit','Goods Description','Airline','Flight No',
-  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date'
+  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date',
+  'Completed Milestone Date','Job Completed On'
 ];
 
 // ======================= Lib.gs =======================
@@ -367,7 +368,8 @@ function isDelivered_(r) {
 
 /** The date a shipment was delivered, if known, for lead-time medians. */
 function deliveredOn_(r) {
-  return validDate_(r['Delivery Date']) || validDate_(r['Delivered']);
+  // LogiSys's own completion date first; the importer's "first reported delivered" as fallback.
+  return validDate_(r['Delivery Date']) || validDate_(r['Job Completed On']) || validDate_(r['Delivered']);
 }
 
 /** Match a free-typed name ("KIM KONG", "kim angelu kong") to a handler. */

@@ -193,5 +193,6 @@ const FEED_HEADERS = [
   'Place Of Delivery','Shipment Date','ETD','ATD','ETA','ATA',
   'Containers 20ft','Containers 40ft','Containers 45ft','Container Nos',
   'Total Packages','Unit','Goods Description','Airline','Flight No',
-  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date'
+  'Status','Stage','Delivered','Account Handler','Last Updated','Source Report Date',
+  'Completed Milestone Date','Job Completed On'
 ];
