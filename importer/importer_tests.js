@@ -88,6 +88,7 @@ function world(messages, opts) {
     Date: FakeDate, Math, JSON, Object, Array, String, Number, RegExp, Error, isNaN, console,
     Logger: { log: (...a) => logs.push(a.join(' ')) },
     MailApp: { sendEmail: m => mail.push(m) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'franchisekid43@gmail.com' }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = v; },
@@ -270,6 +271,13 @@ test('No report by 07:30 on a working day -> COO told once', () => {
   setNow(2026, 9, 26, 9, 0); world([]); W.run('runImporter()');
   check('Saturday — no alert', W.mail.length === 0);
   setNow(2026, 9, 28, 7, 15);
+});
+
+test('Installed under the wrong Google account -> COO told, nothing written', () => {
+  world([email('SEA Shipment Register', TODAY_0700, [seaReport()])], { user: 'someone@philindo.com.ph' });
+  W.run('runImporter()');
+  check('nothing written', !W.feed.getSheetByName('LogiSys Live'));
+  check('COO email names the inbox', W.mail.length === 1 && /franchisekid43@gmail\.com/.test(W.mail[0].htmlBody));
 });
 
 test('Write audit — only LogiSys Live and LogiSys Archive', () => {

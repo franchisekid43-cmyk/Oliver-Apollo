@@ -171,11 +171,13 @@ function planEmails_(Q, arr, notes) {
   const cooNotes = notes.slice();
 
   // ---- route shipment-risk items to their handler ----
-  const byHandler = {}, ariel = { q1: [], q2: [], q5b: [], q5c: [], q4: [], q5a: [], copies: [] };
-  const rerouted = {};
+  // Ariel receives ONLY shipment-update work (stale status, no ETA) — never
+  // another account's shipments. COO's decision, 28 Sep 2026.
+  const byHandler = {}, ariel = { q4: Q.q4, q5a: Q.q5a.filter(nonGreen) };
+  const rerouted = {}, unassigned = [];
   SHIPMENT_RISK_.forEach(function (k) {
     Q[k].filter(nonGreen).forEach(function (s) {
-      if (!s.rawHandler) { ariel[k].push(s); return; }          // handler not set -> Ariel
+      if (!s.rawHandler) { unassigned.push(s.jo); return; }     // handler not set -> COO note
       if (!s.handler || !R.handlers[s.handler]) {              // no address -> COO note
         const who = s.handler || s.rawHandler;
         (rerouted[who] = rerouted[who] || { known: !!s.handler, jos: [] }).jos.push(s.jo);
@@ -185,9 +187,6 @@ function planEmails_(Q, arr, notes) {
       b[k].push(s);
     });
   });
-  ariel.q4 = Q.q4;
-  ariel.q5a = Q.q5a.filter(nonGreen);
-  ariel.copies = Q.q5c.filter(function (s) { return s.sev === 'red' && s.rawHandler; });
 
   function subjectFor(n, critical) {
     return (critical ? 'CRITICAL — ' : '') + CONFIG.AGENT + ': ' + n +
@@ -206,7 +205,7 @@ function planEmails_(Q, arr, notes) {
   function linesOf(map) {
     const out = [];
     Object.keys(map).forEach(function (k) {
-      map[k].forEach(function (s) { out.push(textLine_(k === 'copies' ? 'q5c' : k, s)); });
+      map[k].forEach(function (s) { out.push(textLine_(k, s)); });
     });
     return out;
   }
@@ -234,34 +233,30 @@ function planEmails_(Q, arr, notes) {
     });
   });
 
-  // ---- Ariel: stale status, no ETA, red 5c copies, and shipments with no handler ----
-  const unassigned = [ariel.q1, ariel.q2, ariel.q5b, ariel.q5c];
-  const arielLists = unassigned.concat([ariel.q4, ariel.q5a, ariel.copies]);
-  const arielJos = josOf(arielLists);
+  // ---- Ariel: stale status and no ETA — data he maintains in LogiSys ----
+  const arielJos = josOf([ariel.q4, ariel.q5a]);
   if (arielJos.length) {
     if (!R.support) {
       cooNotes.push('Ariel has no email address set — his ' + arielJos.length +
                     ' shipment(s) are in this email: ' + arielJos.join(', ') + '.');
     } else {
-      const hn = ' — handler not set';
       emails.push({
         person: 'Ariel', to: R.support, jos: arielJos, lines: linesOf(ariel),
-        subject: subjectFor(arielJos.length, anyRed(unassigned)),
+        subject: subjectFor(arielJos.length, false),         // data work is never CRITICAL
         html: wrap_(greet('Ariel') + sectionsHtml_([
-          { key: 'q1', title: TITLES_.q1 + hn, items: ariel.q1, note: 'No account handler in LogiSys or the CA Tracker.' },
-          { key: 'q2', title: TITLES_.q2 + hn, items: ariel.q2, note: 'No account handler in LogiSys or the CA Tracker.' },
-          { key: 'q5b', title: TITLES_.q5b + hn, items: ariel.q5b, note: '' },
-          { key: 'q5c', title: TITLES_.q5c + hn, items: ariel.q5c, note: '' },
           { key: 'q5a', title: 'No ETA recorded — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
             items: ariel.q5a, note: 'These cannot be planned until an ETA is in LogiSys.' },
-          { key: 'q4', title: TITLES_.q4, items: ariel.q4, note: '' },
-          { key: 'q5c', title: TITLES_.q5c, items: ariel.copies, note: 'For your information — the handler has these too.' }
+          { key: 'q4', title: TITLES_.q4, items: ariel.q4, note: '' }
         ]), '')
       });
     }
   }
 
   // ---- COO: everything ----
+  if (unassigned.length) {
+    cooNotes.push('No account handler set in LogiSys or the CA Tracker for ' + unassigned.length +
+                  ' shipment(s) — they are in this email only: ' + unassigned.join(', ') + '.');
+  }
   Object.keys(rerouted).forEach(function (who) {
     const x = rerouted[who];
     cooNotes.push((x.known ? who + ' has no email address set' :

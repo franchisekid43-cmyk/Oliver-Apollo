@@ -26,8 +26,13 @@ const IMPORTER = {
   SHEET_ARCHIVE: 'LogiSys Archive',
 
   // ---- The LogiSys email --------------------------------------------------
-  // Matched on sender and subject, never on position in the inbox.
-  FEED_SENDER: 'no-reply@philindo.com.ph',     // confirm with the COO
+  // LogiSys sends the report to this inbox every day at 06:00. Gmail is read
+  // as the account that installs this project, so install it signed in as
+  // this address — the importer checks and tells the COO if it is not.
+  INBOX: 'franchisekid43@gmail.com',
+  // Matched on sender (when set) and subject, never on position in the inbox.
+  // Blank = subject only. Fill in from the first real LogiSys email.
+  FEED_SENDER: '',
   FEED_SUBJECTS: ['SEA Shipment Register', 'AIR Shipment Report'],   // matched loosely
   SEARCH_DAYS: 7,                              // how far back to look for unprocessed reports
   LABEL_DONE: 'LogiSys/Imported',              // for people; processing is tracked by message id
@@ -35,7 +40,8 @@ const IMPORTER = {
   HEADER_SEARCH_ROWS: 10,                      // LogiSys puts ~3 preamble lines above the header
 
   // ---- Schedule -----------------------------------------------------------
-  // Every 15 minutes so this morning's report is in before Penny runs at 07:45.
+  // Every 15 minutes: the 06:00 report is in LogiSys Live by ~06:15, well
+  // before Penny runs at 07:45.
   TRIGGER_EVERY_MINUTES: 15,
   // If no report dated today has been imported by this time on a working
   // day, tell the COO — once.

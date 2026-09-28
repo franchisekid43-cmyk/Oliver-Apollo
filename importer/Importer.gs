@@ -28,6 +28,12 @@ function importRun_(dry) {
     if (!IMPORTER.FEED_SPREADSHEET_ID) {
       return failLoud_(dry, 'FEED_SPREADSHEET_ID is not set in Config.gs', 'Nothing was imported.', log);
     }
+    const me = String(Session.getEffectiveUser().getEmail() || '').toLowerCase();
+    if (IMPORTER.INBOX && me && me !== IMPORTER.INBOX.toLowerCase()) {
+      return failLoud_(dry, 'running as the wrong Google account',
+        'The importer is running as ' + me + ' but LogiSys sends to ' + IMPORTER.INBOX +
+        '. Install it signed in as ' + IMPORTER.INBOX + '.', log);
+    }
     const ss = SpreadsheetApp.openById(IMPORTER.FEED_SPREADSHEET_ID);
 
     const found = findReports_(dry);
@@ -98,7 +104,8 @@ function importRun_(dry) {
  * hide every later report in that thread.
  */
 function findReports_() {
-  const q = 'from:(' + IMPORTER.FEED_SENDER + ') has:attachment newer_than:' + IMPORTER.SEARCH_DAYS + 'd';
+  const q = (IMPORTER.FEED_SENDER ? 'from:(' + IMPORTER.FEED_SENDER + ') ' : '') +
+            'has:attachment newer_than:' + IMPORTER.SEARCH_DAYS + 'd';
   const props = PropertiesService.getScriptProperties();
   const out = [];
   GmailApp.search(q).forEach(function (thread) {

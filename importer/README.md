@@ -3,7 +3,7 @@
 Plumbing, not an agent. It reads the daily LogiSys register emails (SEA and AIR), parses the
 attachments and writes **exactly two sheets, both its own**: `LogiSys Live` and `LogiSys Archive`.
 Penny, Nico and the Command Center read them. It emails nobody but the COO, and only when
-something went wrong. Tested: **41 checks passing** (`node importer_tests.js`).
+something went wrong. Tested: **43 checks passing** (`node importer_tests.js`).
 
 Spec: `docs/PROMPT_logisys_importer.md` (Part A. Part B, the shared outbox, is not built).
 
@@ -12,16 +12,25 @@ Spec: `docs/PROMPT_logisys_importer.md` (Part A. Part B, the shared outbox, is n
 It is a **separate Apps Script project** from Penny, so a parsing bug can never make Penny send
 a wrong email.
 
-1. <https://script.google.com> → **New project**, name it *LogiSys Importer*.
+LogiSys emails the report to **franchisekid43@gmail.com every day at 06:00**. Apps Script reads
+the Gmail of the account that owns the project, so:
+
+1. Sign in to Google as **franchisekid43@gmail.com**, open <https://script.google.com> →
+   **New project**, name it *LogiSys Importer*. That account must be able to edit the feed
+   workbook — share it with franchisekid43@gmail.com if it lives on a Philindo account.
+   If the importer ever runs as another account, it stops and tells the COO.
 2. Create `Config.gs` and `Importer.gs` and paste in their contents. In **Project Settings**, tick
    *Show "appsscript.json"* and paste `appsscript.json` (Asia/Manila time zone; it enables the
    **Drive advanced service**, used to convert Excel attachments).
 3. In `Config.gs`:
    - `FEED_SPREADSHEET_ID` — the ID of the workbook where Penny is installed (required).
-   - `FEED_SENDER` and `FEED_SUBJECTS` — confirm against a real LogiSys email.
+   - `FEED_SUBJECTS` — confirm against the first real LogiSys email.
+   - `FEED_SENDER` — blank for now, so reports are matched on subject alone. Fill in LogiSys's
+     sender address once the first email arrives, so nothing else in that inbox can match.
 4. Run **`dryRun()`**. The log prints every row it parsed, with typed dates, and every problem.
    It writes nothing and emails nobody.
-5. Run **`setup()`**. Installs a trigger every 15 minutes and imports whatever is waiting.
+5. Run **`setup()`**. Installs a trigger every 15 minutes and imports whatever is waiting. The
+   06:00 report is in LogiSys Live by about 06:15, well before Penny runs at 07:45.
 
 | Function | What it does |
 |---|---|

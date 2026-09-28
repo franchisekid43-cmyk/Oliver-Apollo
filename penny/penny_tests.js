@@ -298,6 +298,13 @@ test('Queue 5a — no ETA recorded, severity from ETD', () => {
   check('ETD passed 4 days is red', sevOf(Q, 'q5a', 'A-4') === 'red');
 });
 
+test('Ariel is not copied on red 5c — the handler has it', () => {
+  world({ live: [ship({ 'JO Number': 'C-RED', 'ETA': daysAgo(4) })] });
+  W.run('runPenny()');
+  check('handler receives it', to(KIM).some(m => /C-RED/.test(m.htmlBody)));
+  check('Ariel receives nothing', to(ARIEL).length === 0);
+});
+
 test('Queue 5c — ETA passed, no arrival', () => {
   const live = [ship({ 'JO Number': 'C-1', 'ETA': daysAgo(1) }), ship({ 'JO Number': 'C-3', 'ETA': daysAgo(3) })];
   const Q = runQueues({ live });
@@ -386,7 +393,9 @@ test('Routing, subjects and recipients', () => {
   check('Kim receives exactly one email with both her shipments', to(KIM).length === 1 && /R-KIM\b/.test(to(KIM)[0].htmlBody) && /R-KIM2/.test(to(KIM)[0].htmlBody));
   check('Kim\'s email contains nobody else\'s shipments', to(KIM).length === 1 && !/R-ANDREW|R-NONE|R-CA|R-STALE/.test(to(KIM)[0].htmlBody));
   check('handler falls back to CA Tracker "Requested By" (case-insensitive)', to('jenalucido@philindo.com.ph').some(m => /R-CA/.test(m.htmlBody)));
-  check('no handler anywhere -> routed to Ariel, marked "handler not set"', to(ARIEL).some(m => /R-NONE/.test(m.htmlBody) && /handler not set/i.test(m.htmlBody)));
+  check('no handler anywhere -> COO, noted "No account handler set"', to(COO).length === 1 && /R-NONE/.test(to(COO)[0].htmlBody) && /No account handler set[^<]*R-NONE/.test(to(COO)[0].htmlBody));
+  check('Ariel gets only shipment updates — never another account\'s shipments',
+    to(ARIEL).length === 1 && /R-STALE/.test(to(ARIEL)[0].htmlBody) && !/R-NONE|R-KIM|R-ANDREW|R-CA/.test(to(ARIEL)[0].htmlBody));
   check('blank address (Andrew) -> COO email carries his shipment with a visible note',
     to(COO).length === 1 && /R-ANDREW/.test(to(COO)[0].htmlBody) && /Andrew Mausig/.test(to(COO)[0].htmlBody) && /no (email )?address/i.test(to(COO)[0].htmlBody));
   check('nobody receives two emails', new Set(people).size === people.length, people.join(', '));

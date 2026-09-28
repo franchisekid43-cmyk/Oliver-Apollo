@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **84 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **87 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -91,7 +91,13 @@ Queue 1 goes **red on day 4** (two days before the first charge) and
 - **Only this morning's report is queued.** A JO whose row in LogiSys Live carries an older
   Source Report Date has dropped out of the LogiSys report and is not chased.
 - **The COO email is silent** on a morning with nothing amber or red, no new JOs and no notes.
-- **Ariel's address** is set in `Config.gs` (`arielcaingcoy@philindo.com.ph`) — confirm it.
+- **Ariel receives only shipment updates** — stale status (queue 4) and missing ETAs (queue 5a),
+  the data he maintains in LogiSys. He is never sent another account's shipments: a shipment
+  with no handler goes to the COO with a note, and he is not copied on red "ETA passed" items
+  (COO's decision, 28 Sep 2026; this overrides the "handler not set → Ariel" rule in the spec).
+  His address: `arielcaingcoy@philindo.com.ph`.
+- **Penny's emails come from the Google account that runs `setup()`.** Install her under a
+  Philindo account so handlers see a company sender.
 
 ## Running the tests
 
