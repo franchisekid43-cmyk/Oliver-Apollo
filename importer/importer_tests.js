@@ -280,6 +280,27 @@ test('Installed under the wrong Google account -> COO told, nothing written', ()
   check('COO email names the inbox', W.mail.length === 1 && /franchisekid43@gmail\.com/.test(W.mail[0].htmlBody));
 });
 
+test('Year-to-date register: the same old problem is reported once, not every morning', () => {
+  const rep = (d) => email('SEA Shipment Register', new FakeDate(2026, 8, d, 6, 0), [csvAtt('s.csv', PRE.concat([SEA_H,
+    seaRow({ 'Shipment No': 'IMP-OLD', 'BL NO': 'B', 'Consignee': 'X', 'ETD': '2026-03-01', 'ETA': '31/03/2026', 'Status': 'Job Completed' }),
+    seaRow({ 'Shipment No': 'IMP-BB', 'BL NO': 'B2', 'Consignee': 'Y', 'Cargo Type': 'BREAK BULK', 'ETD': '2026-03-01', 'ETA': '2026-03-10', 'Status': 'Job Completed' })]))]);
+  setNow(2026, 9, 24, 6, 15); world([rep(24)]); W.run('runImporter()');
+  check('day 1: the bad date is reported', W.mail.some(m => /IMP-OLD: ETA/.test(m.htmlBody)));
+  check('BREAK BULK is a valid cargo type — no problem raised', !W.mail.some(m => /IMP-BB/.test(m.htmlBody)));
+  check('BREAK BULK kept as the cargo type', liveObjs().find(o => o['JO Number'] === 'IMP-BB')['Cargo Type'] === 'BREAK BULK');
+  setNow(2026, 9, 25, 6, 15); world([rep(25)], { keepFeed: true }); W.run('runImporter()');
+  check('day 2, same unchanged row: no email to the COO', W.mail.length === 0, W.mail.map(m => m.subject).join(' | '));
+  setNow(2026, 9, 28, 7, 15);
+});
+
+test('Dry run that finds today\'s report does not claim it is missing', () => {
+  setNow(2026, 9, 28, 16, 10);
+  world([email('SEA Shipment Register', new FakeDate(2026, 8, 28, 6, 0), [seaReport()])]);
+  W.run('dryRun()');
+  check('no "not received" line', !W.logs.some(l => /not received/.test(l)), W.logs.filter(l => /not received/.test(l)).join(' | '));
+  setNow(2026, 9, 28, 7, 15);
+});
+
 test('Write audit — only LogiSys Live and LogiSys Archive', () => {
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n');
   const WRITE = /\.(setValues?|appendRow|clear\w*|deleteRows?|deleteColumns?|deleteSheet|insertSheet|insertRows?\w*|setFormulas?)\s*\(/g;

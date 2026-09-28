@@ -189,10 +189,11 @@ function importRun_(dry) {
       }
     });
 
-    var issues = [];
+    var issues = [], changedJos = {};
     if (good.length) {
       const plan = planWrite_(ss, good);          // throws if LogiSys Live is not ours
       issues = plan.issues;
+      changedJos = plan.changedJos;
       say('LogiSys Live: ' + plan.live.length + ' JOs (' + plan.changed + ' new or changed)' +
           ' | Archive rows to append: ' + plan.archive.length);
       if (dry) {
@@ -210,8 +211,13 @@ function importRun_(dry) {
       lines.push('NOT IMPORTED — "' + f.m.subject + '" received ' + fmtTime_(f.m.date) + ': ' + f.error +
                  '. LogiSys Live was not changed by this report.');
     });
+    // The register is year-to-date, so the same old row arrives every day.
+    // A row's problem is reported when the row is new or changed — once,
+    // not every morning.
     good.forEach(function (g) {
-      g.registers.forEach(function (r) { r.issues.forEach(function (i) { lines.push(i); }); });
+      g.registers.forEach(function (r) {
+        r.issues.forEach(function (i) { if (!i.jo || changedJos[i.jo]) lines.push(i.text); });
+      });
     });
     issues.forEach(function (i) { lines.push(i); });
     if (lines.length) {
@@ -220,7 +226,9 @@ function importRun_(dry) {
       sendCoo_(dry, subj, lines, say);
     }
 
-    checkMissing_(ss, dry, say);
+    const today = dayOf_(new Date());
+    const gotToday = good.some(function (g) { return g.m.reportDate.getTime() === today.getTime(); });
+    checkMissing_(ss, dry, say, gotToday);
     return log.join('\n');
   } catch (e) {
     return failLoud_(dry, 'run failed', e.message, log);
@@ -339,7 +347,7 @@ function parseRegister_(values, reportDate) {
     const rest = raw.filter(function (c, j) { return j !== col['JO Number'] && clean_(c) !== ''; });
     const jo = clean_(raw[col['JO Number']]);
     if (!jo) {
-      if (rest.length > 1) issues.push(kind + ' row ' + (r + 1) + ': no Shipment No — row skipped');
+      if (rest.length > 1) issues.push({ jo: '', text: kind + ' row ' + (r + 1) + ': no Shipment No — row skipped' });
       continue;
     }
     if (!rest.length) continue;                         // title or footer line
@@ -354,28 +362,29 @@ function parseRegister_(values, reportDate) {
       const ct = clean_(o['Cargo Type']).toUpperCase();
       if (/\bFCL\b/.test(ct)) o['Cargo Type'] = 'FCL';
       else if (/\bLCL\b/.test(ct)) o['Cargo Type'] = 'LCL';
-      else if (ct) issues.push(jo + ': Cargo Type "' + ct + '" is neither FCL nor LCL — kept as written');
+      else if (/^BREAK\s*BULK$/.test(ct)) o['Cargo Type'] = 'BREAK BULK';     // a real sea cargo type
+      else if (ct) issues.push({ jo: jo, text: jo + ': Cargo Type "' + ct + '" is not FCL, LCL or BREAK BULK — kept as written' });
     } else o['Cargo Type'] = '';
 
     DATE_FIELDS.forEach(function (f) {
       const v = raw[col[f]];
       if (col[f] === undefined || v === '' || v === null) { o[f] = ''; return; }
       const d = normDate_(v);
-      if (!d) { o[f] = ''; issues.push(jo + ': ' + f + ' "' + showRaw_(v) + '" is not a valid date — left blank'); }
+      if (!d) { o[f] = ''; issues.push({ jo: jo, text: jo + ': ' + f + ' "' + showRaw_(v) + '" is not a valid date — left blank' }); }
       else o[f] = d;
     });
     NUMBER_FIELDS.forEach(function (f) {
       const v = raw[col[f]];
       if (col[f] === undefined || clean_(v) === '') { o[f] = ''; return; }
       const n = typeof v === 'number' ? v : Number(clean_(v).replace(/,/g, ''));
-      if (isNaN(n) || n < 0) { o[f] = ''; issues.push(jo + ': ' + f + ' "' + v + '" is not a number — left blank'); }
+      if (isNaN(n) || n < 0) { o[f] = ''; issues.push({ jo: jo, text: jo + ': ' + f + ' "' + v + '" is not a number — left blank' }); }
       else o[f] = n;
     });
 
     o['Stage'] = stageOf_(o['Status']);
     o['Source Report Date'] = reportDate;
 
-    if (byJo[jo]) issues.push(jo + ': listed twice in the ' + kind + ' register — last row kept');
+    if (byJo[jo]) issues.push({ jo: jo, text: jo + ': listed twice in the ' + kind + ' register — last row kept' });
     else order.push(jo);
     byJo[jo] = o;
   }
@@ -404,7 +413,7 @@ function planWrite_(ss, good) {
   const live = {};
   existing.forEach(function (o) { live[o['JO Number']] = o; });
 
-  const archive = [], issues = [], preview = [];
+  const archive = [], issues = [], preview = [], changedJos = {};
   var changed = 0;
   good.forEach(function (g) {
     g.registers.forEach(function (reg) {
@@ -421,7 +430,7 @@ function planWrite_(ss, good) {
         o['Delivered'] = (prev && asDay_(prev['Delivered'])) ? asDay_(prev['Delivered'])
           : (isDeliveredStatus_(o['Status']) ? o['Source Report Date'] : '');
 
-        if (!prev || !sameRow_(prev, o)) { archive.push(o); changed++; }
+        if (!prev || !sameRow_(prev, o)) { archive.push(o); changed++; changedJos[jo] = true; }
         live[jo] = o;
         preview.push(jo + ' | ' + o['Mode'] + ' ' + o['Cargo Type'] + ' | ' + o['Client'] +
           ' | ETD ' + fmt_(o['ETD']) + ' | ETA ' + fmt_(o['ETA']) + ' | ATA ' + fmt_(o['ATA']) +
@@ -434,7 +443,7 @@ function planWrite_(ss, good) {
   rows.forEach(function (o) {
     if (!o['Source Report Date']) issues.push(o['JO Number'] + ': no Source Report Date');
   });
-  return { live: rows, archive: archive, changed: changed, issues: issues, preview: preview };
+  return { live: rows, archive: archive, changed: changed, changedJos: changedJos, issues: issues, preview: preview };
 }
 
 /** Same shipment facts? (ignores the report date itself) */
@@ -522,7 +531,8 @@ function readOwned_(ss, name) {
 /** ============ Failure reporting ============ */
 
 /** No report dated today by the alert time on a working day -> tell the COO, once. */
-function checkMissing_(ss, dry, say) {
+function checkMissing_(ss, dry, say, gotToday) {
+  if (gotToday) return;                       // this run found today's report (matters on a dry run)
   const now = new Date();
   const w = now.getDay();
   if (w === 0 || w === 6) return;

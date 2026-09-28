@@ -3,7 +3,7 @@
 Plumbing, not an agent. It reads the daily LogiSys register emails (SEA and AIR), parses the
 attachments and writes **exactly two sheets, both its own**: `LogiSys Live` and `LogiSys Archive`.
 Penny, Nico and the Command Center read them. It emails nobody but the COO, and only when
-something went wrong. Tested: **43 checks passing** (`node importer_tests.js`).
+something went wrong. Tested: **48 checks passing** (`node importer_tests.js`).
 
 Spec: `docs/PROMPT_logisys_importer.md` (Part A. Part B, the shared outbox, is not built).
 
