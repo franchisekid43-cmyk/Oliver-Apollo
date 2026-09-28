@@ -312,7 +312,11 @@ function readAttachment_(blob) {
                  mimeType: 'application/vnd.google-apps.spreadsheet' };
   const file = Drive.Files.create ? Drive.Files.create(meta, blob) : Drive.Files.insert(meta, blob);
   try {
-    return SpreadsheetApp.openById(file.id).getSheets().map(function (sh) {
+    const book = SpreadsheetApp.openById(file.id);
+    // Read every date as a Manila day, whatever the account's default time zone
+    // (otherwise a date can arrive carrying a false time of day, or the wrong day).
+    book.setSpreadsheetTimeZone(IMPORTER.TZ);
+    return book.getSheets().map(function (sh) {
       return sh.getDataRange().getValues();
     });
   } finally {

@@ -45,6 +45,7 @@ class FakeBook {
   getSheetByName(n) { return this.sheets[n] || null; }
   getSheets() { return Object.values(this.sheets); }
   insertSheet(n) { return (this.sheets[n] = new FakeSheet(this, n)); }
+  setSpreadsheetTimeZone(z) { this.tz = z; }
 }
 
 // ---------------------------------------------------------- fake LogiSys
