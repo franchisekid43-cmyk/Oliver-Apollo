@@ -19,6 +19,10 @@ const CONFIG = {
 
   // ---- Identity -------------------------------------------------------
   AGENT: 'Penny',
+  // Penny's emails are sent from the Google account that runs her, so she
+  // must be installed (setup()) signed in as this account. If she finds
+  // herself running as anyone else she stops and tells the COO.
+  SENDER_ACCOUNT: 'ops.philindo@gmail.com',
 
   // ---- Schedule -------------------------------------------------------
   SEND_HOUR: 7,

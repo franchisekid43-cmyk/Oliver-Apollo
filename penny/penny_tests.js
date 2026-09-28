@@ -138,7 +138,8 @@ function world(opts) {
         return chain;
       }
     },
-    Utilities: { formatDate: fmt }
+    Utilities: { formatDate: fmt },
+    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'ops.philindo@gmail.com' }) }
   };
   vm.createContext(ctx);
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
@@ -489,6 +490,16 @@ test('Write audit — Penny writes only to sheets she creates', () => {
   let refused = false;
   try { W.run('ownSheet_(feedBook_(), "LogiSys Live")'); } catch (e) { refused = true; }
   check('ownSheet_ refuses a sheet Penny does not own', refused);
+});
+
+test('Penny sends as ops.philindo@gmail.com, shown as "Penny"', () => {
+  world({ live: [ship({ 'JO Number': 'SA-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })] });
+  W.run('runPenny()');
+  check('every email carries the sender name "Penny"', W.mail.length > 0 && W.mail.every(m => m.name === 'Penny'));
+  world({ user: 'franchisekid43@gmail.com', live: [ship({ 'JO Number': 'SA-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })] });
+  W.run('runPenny()');
+  check('wrong account: nothing to handlers, one note to the COO naming the ops account',
+    W.mail.length === 1 && W.mail[0].to === COO && /ops\.philindo@gmail\.com/.test(W.mail[0].htmlBody), W.mail.map(m => m.to).join(','));
 });
 
 test('dryRun sends nothing and writes nothing', () => {

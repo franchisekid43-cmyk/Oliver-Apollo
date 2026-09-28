@@ -25,8 +25,8 @@ the Gmail of the account that owns the project, so:
 3. In `Config.gs`:
    - `FEED_SPREADSHEET_ID` — the ID of the workbook where Penny is installed (required).
    - `FEED_SUBJECTS` — confirm against the first real LogiSys email.
-   - `FEED_SENDER` — blank for now, so reports are matched on subject alone. Fill in LogiSys's
-     sender address once the first email arrives, so nothing else in that inbox can match.
+   - `FEED_SENDER` is `no-reply@philindo.com.ph`, LogiSys's sending address. Only emails from it
+     with a matching subject are imported.
 4. Run **`dryRun()`**. The log prints every row it parsed, with typed dates, and every problem.
    It writes nothing and emails nobody.
 5. Run **`setup()`**. Installs a trigger every 15 minutes and imports whatever is waiting. The

@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **87 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **89 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -9,6 +9,12 @@ Penny reads `LogiSys Live` and `LogiSys Archive`, which the **LogiSys importer**
 you empty sheets to test against.
 
 ## Install
+
+Penny sends from **ops.philindo@gmail.com** (shown as "Penny"). Apps Script sends mail as the
+account that installs the trigger, so do every step below **signed in as ops.philindo@gmail.com**.
+That account needs **edit** access to the feed workbook (to write Penny Arrivals) and **view**
+access to the CA Tracker. If Penny ever runs as another account she sends nothing to handlers
+and tells the COO.
 
 1. Open the Google Sheet that will hold **LogiSys Live** (the one the importer writes to).
    **Extensions → Apps Script.**
@@ -96,8 +102,8 @@ Queue 1 goes **red on day 4** (two days before the first charge) and
   with no handler goes to the COO with a note, and he is not copied on red "ETA passed" items
   (COO's decision, 28 Sep 2026; this overrides the "handler not set → Ariel" rule in the spec).
   His address: `arielcaingcoy@philindo.com.ph`.
-- **Penny's emails come from the Google account that runs `setup()`.** Install her under a
-  Philindo account so handlers see a company sender.
+- **Penny sends from ops.philindo@gmail.com** — `CONFIG.SENDER_ACCOUNT`. The importer reads
+  franchisekid43@gmail.com; the two are separate accounts on purpose.
 
 ## Running the tests
 

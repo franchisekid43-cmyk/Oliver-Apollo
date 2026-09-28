@@ -30,9 +30,8 @@ const IMPORTER = {
   // as the account that installs this project, so install it signed in as
   // this address — the importer checks and tells the COO if it is not.
   INBOX: 'franchisekid43@gmail.com',
-  // Matched on sender (when set) and subject, never on position in the inbox.
-  // Blank = subject only. Fill in from the first real LogiSys email.
-  FEED_SENDER: '',
+  // Matched on sender and subject, never on position in the inbox.
+  FEED_SENDER: 'no-reply@philindo.com.ph',
   FEED_SUBJECTS: ['SEA Shipment Register', 'AIR Shipment Report'],   // matched loosely
   SEARCH_DAYS: 7,                              // how far back to look for unprocessed reports
   LABEL_DONE: 'LogiSys/Imported',              // for people; processing is tracked by message id

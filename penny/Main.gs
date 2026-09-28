@@ -53,6 +53,14 @@ function execute_(dry) {
   // Monday to Friday only
   if (isWeekend_(now) && !dry) { say('Weekend — nothing sent.'); return log.join('\n'); }
 
+  // Handlers must see Penny's mail come from the ops account, never a personal one
+  const me = String(Session.getEffectiveUser().getEmail() || '').toLowerCase();
+  if (CONFIG.SENDER_ACCOUNT && me && me !== CONFIG.SENDER_ACCOUNT.toLowerCase()) {
+    return fail_(dry, 'running as the wrong Google account',
+      'Penny is running as ' + me + ', so her emails would come from that address. ' +
+      'Run setup() signed in as ' + CONFIG.SENDER_ACCOUNT + ' (and remove the trigger from ' + me + ').', log);
+  }
+
   var feed, ss;
   try {
     feed = loadFeed_();
@@ -149,7 +157,7 @@ function fail_(dry, subject, detail, log) {
 
 function sendTo_(to, subject, html) {
   if (!to) return false;
-  MailApp.sendEmail({ to: to, subject: subject, htmlBody: html });
+  MailApp.sendEmail({ to: to, subject: subject, htmlBody: html, name: CONFIG.AGENT });   // shows as "Penny"
   return true;
 }
 
