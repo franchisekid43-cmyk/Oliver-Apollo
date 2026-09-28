@@ -626,6 +626,17 @@ function modeOf_(r) {
   return jo.charAt(0).toUpperCase() === 'A' ? 'Air' : 'Sea';   // AIMP... = air
 }
 
+/**
+ * The month a JO was opened, from its number (IMP0526-0941 -> May 2026).
+ * Used ONLY to apply the scope cutoff to a row that carries no date at all —
+ * never shown, never aged.
+ */
+function joMonth_(jo) {
+  const x = /^[A-Za-z]+(\d{2})(\d{2})-/.exec(jo);
+  if (!x || +x[1] < 1 || +x[1] > 12) return null;
+  return new Date(2000 + +x[2], +x[1] - 1, 1);
+}
+
 /** ============ The five queues ============ */
 
 const SEV_RANK_ = { green: 0, amber: 1, red: 2, critical: 3 };
@@ -666,7 +677,7 @@ function buildQueues_(rows, hmap, prev) {
     const rawHandler = norm_(r['Account Handler']) || ca.handler || '';
 
     // ---- scope cutoff (COO's rule): anchored before SCOPE_FROM = done
-    const anchor = arr.date || eta || etd || validDate_(r['Shipment Date']);
+    const anchor = arr.date || eta || etd || validDate_(r['Shipment Date']) || joMonth_(jo);
     if (anchor && anchor < CONFIG.SCOPE_FROM) { Q.outOfScope++; return; }
 
     const base = {
@@ -1193,12 +1204,16 @@ function q5cHtml_(items) {
 /** One plain line per item, for the dry-run log. */
 function textLine_(key, s) {
   const bits = [s.jo, s.client || '(no client)', key.toUpperCase(), s.sev];
-  if (key === 'q1') bits.push('arrived ' + fmtDate_(s.ata) + ', ' + s.age + 'd, storage in ' + s.daysToStorage + 'd');
+  if (key === 'q1') bits.push('arrived ' + fmtDate_(s.ata) + ', ' + s.age + 'd, ' +
+    (s.demurrageRunning ? 'storage + demurrage running' :
+     s.storageRunning ? 'storage running, demurrage in ' + s.daysToDemurrage + 'd' :
+     'storage in ' + s.daysToStorage + 'd, demurrage in ' + s.daysToDemurrage + 'd') +
+    ', status "' + s.status + '"');
   if (key === 'q2') bits.push('ETA ' + fmtDate_(s.eta) + ', CA ' + s.funding);
   if (key === 'q4') bits.push(s.reasons.join('; '));
   if (key === 'q5a') bits.push('ETD ' + fmtDate_(s.etd) + ', ' + s.etdPast + 'd ago, no ETA');
   if (key === 'q5b') bits.push(s.removed ? 'ETA removed' : 'ETA ' + fmtDate_(s.oldEta) + ' -> ' + fmtDate_(s.newEta));
-  if (key === 'q5c') bits.push(s.age + 'd past ETA');
+  if (key === 'q5c') bits.push(s.age + 'd past ETA, status "' + s.status + '"');
   return bits.join(' | ');
 }
 

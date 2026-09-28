@@ -143,12 +143,16 @@ function q5cHtml_(items) {
 /** One plain line per item, for the dry-run log. */
 function textLine_(key, s) {
   const bits = [s.jo, s.client || '(no client)', key.toUpperCase(), s.sev];
-  if (key === 'q1') bits.push('arrived ' + fmtDate_(s.ata) + ', ' + s.age + 'd, storage in ' + s.daysToStorage + 'd');
+  if (key === 'q1') bits.push('arrived ' + fmtDate_(s.ata) + ', ' + s.age + 'd, ' +
+    (s.demurrageRunning ? 'storage + demurrage running' :
+     s.storageRunning ? 'storage running, demurrage in ' + s.daysToDemurrage + 'd' :
+     'storage in ' + s.daysToStorage + 'd, demurrage in ' + s.daysToDemurrage + 'd') +
+    ', status "' + s.status + '"');
   if (key === 'q2') bits.push('ETA ' + fmtDate_(s.eta) + ', CA ' + s.funding);
   if (key === 'q4') bits.push(s.reasons.join('; '));
   if (key === 'q5a') bits.push('ETD ' + fmtDate_(s.etd) + ', ' + s.etdPast + 'd ago, no ETA');
   if (key === 'q5b') bits.push(s.removed ? 'ETA removed' : 'ETA ' + fmtDate_(s.oldEta) + ' -> ' + fmtDate_(s.newEta));
-  if (key === 'q5c') bits.push(s.age + 'd past ETA');
+  if (key === 'q5c') bits.push(s.age + 'd past ETA, status "' + s.status + '"');
   return bits.join(' | ');
 }
 

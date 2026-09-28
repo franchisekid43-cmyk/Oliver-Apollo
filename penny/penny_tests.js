@@ -458,6 +458,14 @@ test('Scope cutoff — anything anchored before 1 Sep 2026 is out of scope', () 
   check('August arrival is not chased', !Q.q1.some(s => s.jo === 'OLD-AUG'));
 });
 
+test('A row with no dates at all is scoped by its JO month', () => {
+  const live = [ship({ 'JO Number': 'IMP0526-0941', 'ETD': '', 'Status': 'Gatepass Released' }),
+                ship({ 'JO Number': 'IMP0926-0999', 'ETD': '', 'Status': 'Gatepass Released' })];
+  const Q = runQueues({ live });
+  check('May JO with no dates is out of scope', !Q.q4.some(s => s.jo === 'IMP0526-0941'));
+  check('September JO with no dates is still checked', Q.q4.some(s => s.jo === 'IMP0926-0999'));
+});
+
 test('No release step is inferred from status text', () => {
   const live = [
     ship({ 'JO Number': 'REL-1', 'ATA': daysAgo(4), 'ETA': daysAgo(6), 'Status': 'Gatepass Released' }),
