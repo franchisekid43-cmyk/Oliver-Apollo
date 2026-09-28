@@ -269,7 +269,10 @@ function buildQueues_(rows, hmap, prev) {
       return;                                          // arrived: not queue 2 or 5
     }
     if (!arr.arrived && arr.doubt) Q.untrusted.push(Object.assign({}, base, { doubt: arr.doubt }));
-    if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_IMPLIES_ARRIVAL)) {
+    // Only the COO's post-arrival milestones count: documents can be checked and
+    // lodged before the vessel arrives. (With TRUST_LOGISYS_ATA off, these rows
+    // were already flagged above as "arrived, date not confirmed".)
+    if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_POST_ARRIVAL)) {
       flag(base, 'status says "' + status + '" but ATA is blank', 'red');
     }
 

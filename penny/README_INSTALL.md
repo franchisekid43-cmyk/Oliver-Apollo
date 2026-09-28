@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **90 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **94 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -41,12 +41,17 @@ and tells the COO.
 | `runPenny()` | The real run |
 | `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers, if they don't exist |
 
-## Shadow mode — do this first
+## Shadow mode — on by default
 
-Before Ariel or any handler receives anything, set **every** address in `RECIPIENTS`
-to your own, and run for five working days. You will receive each person's email exactly
-as they would. Check three things: the JOs are right, nothing already resolved appears,
-and the wording reads the way you would say it. Then switch the real addresses on.
+```
+SHADOW_TO: 'franchisekid43@gmail.com'
+```
+
+While `SHADOW_TO` holds an address, **every** Penny email — each handler's, Ariel's, the COO's,
+even a failure notice — goes to that address instead, with a line at the top naming who it was
+for. Nobody else receives anything. Run like this for five working days and check three things:
+the JOs are right, nothing already resolved appears, and the wording reads the way you would say
+it. Then set `SHADOW_TO: ''` to go live.
 
 ## What Penny writes
 

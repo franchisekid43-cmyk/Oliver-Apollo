@@ -145,6 +145,7 @@ function world(opts) {
   vm.createContext(ctx);
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
   vm.runInContext(src, ctx, { filename: 'penny.gs' });
+  vm.runInContext('CONFIG.SHADOW_TO = ' + JSON.stringify(opts.shadow || ''), ctx);   // tests check real routing
   if (opts.config) opts.config(vm.runInContext('CONFIG', ctx));
   W = { ctx, feed, ca, mail, logs, triggers,
         run: fn => vm.runInContext(fn, ctx),
@@ -508,6 +509,26 @@ test('Project not on Manila time -> Penny stops and says how to fix it', () => {
   W.run('runPenny()');
   check('nothing to handlers; one note to the COO naming the setting',
     W.mail.length === 1 && W.mail[0].to === COO && /\(GMT\+08:00\) Manila/.test(W.mail[0].htmlBody));
+});
+
+test('Shadow mode — every email goes to one address, marked with who it was for', () => {
+  const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' }),
+                ship({ 'JO Number': 'SH-2', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) })];
+  world({ live, shadow: 'me@example.com' });
+  W.run('runPenny()');
+  check('all emails go to the shadow address', W.mail.length >= 3 && W.mail.every(m => m.to === 'me@example.com'), W.mail.map(m => m.to).join(','));
+  check('each is marked with its real recipient', W.mail.some(m => /this email was for <b>Kim Angelu Kong<\/b>/.test(m.htmlBody)) &&
+    W.mail.some(m => /this email was for <b>Ariel<\/b>/.test(m.htmlBody)) && W.mail.some(m => /this email was for <b>COO<\/b>/.test(m.htmlBody)));
+  world({ live });
+  const cfg = fs.readFileSync(path.join(DIR, 'Config.gs'), 'utf8');
+  check('shipped config starts in shadow mode', /SHADOW_TO: '[^']+@[^']+'/.test(cfg));
+});
+
+test('Pre-arrival statuses are not "arrived" data gaps', () => {
+  const live = [ship({ 'JO Number': 'PA-1', 'ETA': daysAhead(3), 'Status': 'Checking of Documents' }),
+                ship({ 'JO Number': 'PA-2', 'ETA': daysAhead(3), 'Status': 'Lodgement of Shipment' })];
+  const Q = runQueues({ live });
+  check('"Checking of Documents" / "Lodgement" with no ATA are not flagged for Ariel', !Q.q4.some(s => /PA-/.test(s.jo)));
 });
 
 test('dryRun sends nothing and writes nothing', () => {

@@ -27,6 +27,12 @@ const CONFIG = {
   // herself running as anyone else she stops and tells the COO.
   SENDER_ACCOUNT: 'ops.philindo@gmail.com',
 
+  // ---- Shadow mode — ONE switch ----------------------------------------
+  // While this holds an address, EVERY Penny email (handlers, Ariel, COO)
+  // goes to it instead, with a line at the top naming who it was for.
+  // Nobody else receives anything. Set to '' to go live.
+  SHADOW_TO: 'franchisekid43@gmail.com',
+
   // ---- Schedule -------------------------------------------------------
   SEND_HOUR: 7,
   SEND_MINUTE: 45,            // Penny 07:45, Nico 08:00
@@ -163,9 +169,6 @@ const CONFIG = {
   // deliberately absent: vessel one can be a transhipment leg.)
   STATUS_POST_ARRIVAL: ['container discharged','do issued','gatepass released',
                         'payment of duties and taxes','final assesment','final assessment'],
-  // Used only to spot an arrival that the ATA column never recorded
-  STATUS_IMPLIES_ARRIVAL: ['reached','discharged','do issued','gatepass',
-                           'lodgement','checking of documents','duties'],
 
   // ---- Never contacted — checked before every send ---------------------
   NEVER_CONTACT: ['juan carlos','raphael ramos','billing','pablo franco',
@@ -706,7 +709,10 @@ function buildQueues_(rows, hmap, prev) {
       return;                                          // arrived: not queue 2 or 5
     }
     if (!arr.arrived && arr.doubt) Q.untrusted.push(Object.assign({}, base, { doubt: arr.doubt }));
-    if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_IMPLIES_ARRIVAL)) {
+    // Only the COO's post-arrival milestones count: documents can be checked and
+    // lodged before the vessel arrives. (With TRUST_LOGISYS_ATA off, these rows
+    // were already flagged above as "arrived, date not confirmed".)
+    if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_POST_ARRIVAL)) {
       flag(base, 'status says "' + status + '" but ATA is blank', 'red');
     }
 
@@ -1379,8 +1385,14 @@ function fail_(dry, subject, detail, log) {
   return log.join('\n');
 }
 
-function sendTo_(to, subject, html) {
+function sendTo_(to, subject, html, person) {
   if (!to) return false;
+  if (CONFIG.SHADOW_TO) {                            // shadow mode: nobody else receives anything
+    html = '<div style="background:#eef3ff;border-left:3px solid #3355cc;padding:8px 10px;margin:0 0 12px;' +
+           'font-family:Arial,sans-serif;font-size:13px;">Shadow mode — this email was for <b>' +
+           esc_(person || to) + '</b> &lt;' + esc_(to) + '&gt;. Nobody else received it.</div>' + html;
+    to = CONFIG.SHADOW_TO;
+  }
   MailApp.sendEmail({ to: to, subject: subject, htmlBody: html, name: CONFIG.AGENT });   // shows as "Penny"
   return true;
 }
@@ -1592,9 +1604,10 @@ function selfCheck_(emails, deliveredJos) {
 
 function sendAll_(emails, dry, say) {
   emails.forEach(function (e) {
-    say('  -> ' + e.person + ' <' + e.to + '> ' + e.subject + (dry ? ' [dry]' : ''));
+    say('  -> ' + e.person + ' <' + e.to + '> ' + e.subject +
+        (CONFIG.SHADOW_TO ? ' [shadow: goes to ' + CONFIG.SHADOW_TO + ']' : '') + (dry ? ' [dry]' : ''));
     if (dry) e.lines.forEach(function (l) { say('       ' + l); });
-    else sendTo_(e.to, e.subject, e.html);
+    else sendTo_(e.to, e.subject, e.html, e.person);
   });
   return emails.length;
 }

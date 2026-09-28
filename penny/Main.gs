@@ -163,8 +163,14 @@ function fail_(dry, subject, detail, log) {
   return log.join('\n');
 }
 
-function sendTo_(to, subject, html) {
+function sendTo_(to, subject, html, person) {
   if (!to) return false;
+  if (CONFIG.SHADOW_TO) {                            // shadow mode: nobody else receives anything
+    html = '<div style="background:#eef3ff;border-left:3px solid #3355cc;padding:8px 10px;margin:0 0 12px;' +
+           'font-family:Arial,sans-serif;font-size:13px;">Shadow mode — this email was for <b>' +
+           esc_(person || to) + '</b> &lt;' + esc_(to) + '&gt;. Nobody else received it.</div>' + html;
+    to = CONFIG.SHADOW_TO;
+  }
   MailApp.sendEmail({ to: to, subject: subject, htmlBody: html, name: CONFIG.AGENT });   // shows as "Penny"
   return true;
 }
@@ -376,9 +382,10 @@ function selfCheck_(emails, deliveredJos) {
 
 function sendAll_(emails, dry, say) {
   emails.forEach(function (e) {
-    say('  -> ' + e.person + ' <' + e.to + '> ' + e.subject + (dry ? ' [dry]' : ''));
+    say('  -> ' + e.person + ' <' + e.to + '> ' + e.subject +
+        (CONFIG.SHADOW_TO ? ' [shadow: goes to ' + CONFIG.SHADOW_TO + ']' : '') + (dry ? ' [dry]' : ''));
     if (dry) e.lines.forEach(function (l) { say('       ' + l); });
-    else sendTo_(e.to, e.subject, e.html);
+    else sendTo_(e.to, e.subject, e.html, e.person);
   });
   return emails.length;
 }

@@ -24,6 +24,12 @@ const CONFIG = {
   // herself running as anyone else she stops and tells the COO.
   SENDER_ACCOUNT: 'ops.philindo@gmail.com',
 
+  // ---- Shadow mode — ONE switch ----------------------------------------
+  // While this holds an address, EVERY Penny email (handlers, Ariel, COO)
+  // goes to it instead, with a line at the top naming who it was for.
+  // Nobody else receives anything. Set to '' to go live.
+  SHADOW_TO: 'franchisekid43@gmail.com',
+
   // ---- Schedule -------------------------------------------------------
   SEND_HOUR: 7,
   SEND_MINUTE: 45,            // Penny 07:45, Nico 08:00
@@ -160,9 +166,6 @@ const CONFIG = {
   // deliberately absent: vessel one can be a transhipment leg.)
   STATUS_POST_ARRIVAL: ['container discharged','do issued','gatepass released',
                         'payment of duties and taxes','final assesment','final assessment'],
-  // Used only to spot an arrival that the ATA column never recorded
-  STATUS_IMPLIES_ARRIVAL: ['reached','discharged','do issued','gatepass',
-                           'lodgement','checking of documents','duties'],
 
   // ---- Never contacted — checked before every send ---------------------
   NEVER_CONTACT: ['juan carlos','raphael ramos','billing','pablo franco',
