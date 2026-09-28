@@ -34,7 +34,8 @@ class FakeSheet {
   getRange(r, c, nr, nc) {
     const self = this;
     return {
-      setValues(v) { self.writes++; v.forEach((row, i) => { while (self.rows.length < r + i) self.rows.push([]); row.forEach((x, j) => { self.rows[r - 1 + i][c - 1 + j] = x; }); }); return this; },
+      setNumberFormats(f) { self.formats = f; return this; },
+      setValues(v) { self.writes++; if (self.formats) v.forEach((row, i) => row.forEach((x, j) => { if (self.formats[i] && self.formats[i][j] === '@' && x !== '' && typeof x !== 'string') throw new Error('non-text in text column ' + j); })); self.formats = null; v.forEach((row, i) => { while (self.rows.length < r + i) self.rows.push([]); row.forEach((x, j) => { self.rows[r - 1 + i][c - 1 + j] = x; }); }); return this; },
       clearContent() { self.writes++; for (let i = 0; i < nr; i++) if (self.rows[r - 1 + i]) self.rows[r - 1 + i] = []; while (self.rows.length && !self.rows[self.rows.length - 1].length) self.rows.pop(); return this; }
     };
   }
@@ -45,6 +46,8 @@ class FakeBook {
   getSheetByName(n) { return this.sheets[n] || null; }
   getSheets() { return Object.values(this.sheets); }
   insertSheet(n) { return (this.sheets[n] = new FakeSheet(this, n)); }
+  deleteSheet(sh) { delete this.sheets[sh.name]; }
+  getSpreadsheetTimeZone() { return this.tz || 'America/New_York'; }
   setSpreadsheetTimeZone(z) { this.tz = z; }
 }
 
@@ -89,7 +92,8 @@ function world(messages, opts) {
     Date: FakeDate, Math, JSON, Object, Array, String, Number, RegExp, Error, isNaN, console,
     Logger: { log: (...a) => logs.push(a.join(' ')) },
     MailApp: { sendEmail: m => mail.push(m) },
-    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'franchisekid43@gmail.com' }) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'franchisekid43@gmail.com' }),
+               getScriptTimeZone: () => opts.tz || 'Asia/Manila' },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = v; },
@@ -302,10 +306,49 @@ test('Dry run that finds today\'s report does not claim it is missing', () => {
   setNow(2026, 9, 28, 7, 15);
 });
 
+test('Text stays text; the workbook is on Manila time', () => {
+  const r = csvAtt('s.csv', PRE.concat([SEA_H, seaRow({ 'Shipment No': 'IMP-FSA', 'FSA Number (UDF)': '1294-07-26', 'BL NO': '0012345',
+    'Consignee': 'X', 'ETD': '2026-09-10', 'ETA': '2026-09-30', 'Status': 'Vessel One Departed' })]));
+  world([email('SEA Shipment Register', TODAY_0700, [r])]); W.run('runImporter()');
+  const o = liveObjs()[0];
+  check('FSA number kept as the text "1294-07-26"', o['FSA Number'] === '1294-07-26');
+  check('BL number keeps its leading zeros', o['BL/AWB'] === '0012345');
+  check('feed workbook set to Asia/Manila', W.feed.tz === 'Asia/Manila');
+  const tables = [PRE.concat([SEA_H, seaRow({ 'Shipment No': 'IMP-XF', 'FSA Number (UDF)': new FakeDate(1294, 6, 26), 'BL NO': 61850025533,
+    'Consignee': 'X', 'ETD': new FakeDate(2026, 8, 20), 'ETA': new FakeDate(2026, 9, 2), 'Status': 'Vessel One Departed' })])];
+  world([email('SEA Shipment Register', TODAY_0700, [xlsxAtt('sea.xlsx', tables)])]); W.run('runImporter()');
+  const x = liveObjs()[0];
+  check('FSA already turned into a date by Excel conversion -> original text restored', x['FSA Number'] === '1294-07-26', String(x['FSA Number']));
+  check('numeric BL stored as text', x['BL/AWB'] === '61850025533');
+});
+
+test('Project not on Manila time -> stops, tells the COO once a day', () => {
+  world([email('SEA Shipment Register', TODAY_0700, [seaReport()])], { tz: 'America/New_York' });
+  W.run('runImporter()');
+  check('nothing written', !W.feed.getSheetByName('LogiSys Live'));
+  check('COO told how to fix it', W.mail.length === 1 && /\(GMT\+08:00\) Manila/.test(W.mail[0].htmlBody));
+  world([], { tz: 'America/New_York', keepFeed: true }); W.run('runImporter()');
+  check('15 minutes later: not told again', W.mail.length === 0);
+});
+
+test('rebuildFeed — setup-day reset, refused once there is history', () => {
+  world([email('SEA Shipment Register', TODAY_0700, [seaReport()])]); W.run('runImporter()');
+  const before = liveObjs().length;
+  world([email('SEA Shipment Register', TODAY_0700, [seaReport()])], { keepFeed: true });
+  W.feed.getSheetByName('LogiSys Live').rows[1][0] = 'JUNK';
+  W.run('rebuildFeed()');
+  check('Live rebuilt from the inbox', liveObjs().length === before && !liveObjs().some(o => o['JO Number'] === 'JUNK'));
+  const arch = W.feed.getSheetByName('LogiSys Archive');
+  [20, 21, 22].forEach(d => arch.rows.push(arch.rows[1].map((x, j) => j === 31 ? new FakeDate(2026, 8, d) : x)));
+  let refused = false;
+  try { W.run('rebuildFeed()'); } catch (e) { refused = /only for setup day/.test(e.message); }
+  check('refused once the archive holds several report dates', refused);
+});
+
 test('Write audit — only LogiSys Live and LogiSys Archive', () => {
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n');
   const WRITE = /\.(setValues?|appendRow|clear\w*|deleteRows?|deleteColumns?|deleteSheet|insertSheet|insertRows?\w*|setFormulas?)\s*\(/g;
-  const allowed = ['ownedSheet_', 'writePlan_'];
+  const allowed = ['ownedSheet_', 'writePlan_', 'rebuildFeed'];
   const offenders = [];
   let m;
   while ((m = WRITE.exec(src))) {

@@ -3,7 +3,7 @@
 Plumbing, not an agent. It reads the daily LogiSys register emails (SEA and AIR), parses the
 attachments and writes **exactly two sheets, both its own**: `LogiSys Live` and `LogiSys Archive`.
 Penny, Nico and the Command Center read them. It emails nobody but the COO, and only when
-something went wrong. Tested: **48 checks passing** (`node importer_tests.js`).
+something went wrong. Tested: **58 checks passing** (`node importer_tests.js`).
 
 Spec: `docs/PROMPT_logisys_importer.md` (Part A. Part B, the shared outbox, is not built).
 
@@ -37,6 +37,7 @@ the Gmail of the account that owns the project, so:
 | `setup()` | Installs the trigger, then runs once |
 | `dryRun()` | Parses and logs, writes nothing, sends nothing |
 | `runImporter()` | The real run |
+| `rebuildFeed()` | Setup day only: deletes LogiSys Live + Archive and re-imports the reports in the inbox. Refuses once the archive holds more than two report dates. |
 
 ## What it writes
 
@@ -66,6 +67,12 @@ field changed. Penny reads a JO's latest archived state before today as "the pre
 | Hourly trigger | Every 15 minutes | Hourly cannot guarantee the morning report is in before Penny runs at 07:45. |
 
 ## Rules it keeps
+
+- **Manila time, always.** The project's time zone must be (GMT+08:00) Manila — the importer
+  stops and tells the COO otherwise — and it sets the feed workbook to Manila before writing.
+- **Text stays text.** Text columns are written as plain text, so an FSA number like
+  `1294-07-26` is never turned into a date and BL numbers keep their leading zeros.
+- **One alert per problem per day.** A failure that repeats every 15 minutes is emailed once.
 
 - **Never infers.** A blank ATA stays blank. A date outside 2024-01-01 … 2027-12-31, or text that
   is not `yyyy-mm-dd` / `dd-MMM-yyyy`, is written blank and listed in the run report

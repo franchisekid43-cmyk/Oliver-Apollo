@@ -139,7 +139,8 @@ function world(opts) {
       }
     },
     Utilities: { formatDate: fmt },
-    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'ops.philindo@gmail.com' }) }
+    Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'ops.philindo@gmail.com' }),
+               getScriptTimeZone: () => opts.tz || 'Asia/Manila' }
   };
   vm.createContext(ctx);
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
@@ -500,6 +501,13 @@ test('Penny sends as ops.philindo@gmail.com, shown as "Penny"', () => {
   W.run('runPenny()');
   check('wrong account: nothing to handlers, one note to the COO naming the ops account',
     W.mail.length === 1 && W.mail[0].to === COO && /ops\.philindo@gmail\.com/.test(W.mail[0].htmlBody), W.mail.map(m => m.to).join(','));
+});
+
+test('Project not on Manila time -> Penny stops and says how to fix it', () => {
+  world({ tz: 'America/New_York', live: [ship({ 'JO Number': 'TZ-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })] });
+  W.run('runPenny()');
+  check('nothing to handlers; one note to the COO naming the setting',
+    W.mail.length === 1 && W.mail[0].to === COO && /\(GMT\+08:00\) Manila/.test(W.mail[0].htmlBody));
 });
 
 test('dryRun sends nothing and writes nothing', () => {

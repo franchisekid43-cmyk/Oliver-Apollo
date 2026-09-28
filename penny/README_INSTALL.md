@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **89 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **90 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -20,8 +20,9 @@ and tells the COO.
    **Extensions → Apps Script.**
 2. Create six files and paste in the contents of each:
    `Config.gs` · `Lib.gs` · `Queues.gs` · `Arrivals.gs` · `Email.gs` · `Main.gs`
-   In **Project Settings**, tick *Show "appsscript.json"* and paste `appsscript.json`
-   (it sets the time zone to Asia/Manila, which every date calculation relies on).
+   In **Project Settings**, set **Time zone** to **(GMT+08:00) Manila** — every date calculation
+   relies on it, and Penny refuses to run on any other. (A script bound to a sheet starts on
+   the sheet's time zone, which is often not Manila.)
 3. In `Config.gs`, fill in the two blank handler addresses (Andrew Mausig, Jasmin Sawal).
    A blank address routes that person's shipments to the COO with a visible note — nothing is dropped.
 4. Run **`bootstrapFeedSheets()`** once if the importer has not run yet. It creates `LogiSys Live`

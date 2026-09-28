@@ -151,6 +151,39 @@ function setup() {
 function dryRun() { return importRun_(true); }
 function runImporter() { return importRun_(false); }
 
+/**
+ * Setup-day reset: deletes LogiSys Live and LogiSys Archive, forgets which
+ * emails were imported, and imports the reports still in the inbox again.
+ * Refuses once the archive holds more than two report dates — after that the
+ * archive is history and must not be thrown away.
+ */
+function rebuildFeed() {
+  if (Session.getScriptTimeZone() !== IMPORTER.TZ) {
+    throw new Error('Set Project Settings -> Time zone to (GMT+08:00) Manila first.');
+  }
+  const ss = SpreadsheetApp.openById(IMPORTER.FEED_SPREADSHEET_ID);
+  const days = {};
+  readOwned_(ss, IMPORTER.SHEET_ARCHIVE).forEach(function (o) {
+    const d = asDay_(o['Source Report Date']);
+    if (d) days[fmt_(d)] = true;
+  });
+  if (Object.keys(days).length > 2) {
+    throw new Error('LogiSys Archive already holds ' + Object.keys(days).length +
+                    ' report dates — rebuildFeed is only for setup day. Nothing was changed.');
+  }
+  [IMPORTER.SHEET_LIVE, IMPORTER.SHEET_ARCHIVE].forEach(function (name) {
+    const sh = ss.getSheetByName(name);
+    if (sh) ss.deleteSheet(sh);
+  });
+  ss.setSpreadsheetTimeZone(IMPORTER.TZ);
+  const props = PropertiesService.getScriptProperties();
+  props.getKeys().forEach(function (k) {
+    if (/^(done|missing|alert):/.test(k)) props.deleteProperty(k);
+  });
+  Logger.log('LogiSys Live and Archive cleared; re-importing the reports in the inbox.');
+  return runImporter();
+}
+
 /** ---------------- the run ---------------- */
 function importRun_(dry) {
   const log = [];
@@ -167,6 +200,13 @@ function importRun_(dry) {
       return failLoud_(dry, 'running as the wrong Google account',
         'The importer is running as ' + me + ' but LogiSys sends to ' + IMPORTER.INBOX +
         '. Install it signed in as ' + IMPORTER.INBOX + '.', log);
+    }
+    // Every day boundary is a Manila day. A project on another time zone would
+    // stamp reports with the wrong date, so it stops instead.
+    if (Session.getScriptTimeZone() !== IMPORTER.TZ) {
+      return failLoud_(dry, 'project time zone is not Manila',
+        'The importer project is set to ' + Session.getScriptTimeZone() + '. In the Apps Script editor open ' +
+        'Project Settings (gear icon) and set Time zone to (GMT+08:00) Manila.', log);
     }
     const ss = SpreadsheetApp.openById(IMPORTER.FEED_SPREADSHEET_ID);
 
@@ -274,9 +314,13 @@ function markDone_(m, labelName) {
   // forget message ids older than the search window, so properties never fill up
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - IMPORTER.SEARCH_DAYS - 7);
   props.getKeys().forEach(function (k) {
-    if (k.indexOf('done:') !== 0) return;
-    const d = parseIso_(props.getProperty(k));
-    if (d && d < cutoff) props.deleteProperty(k);
+    if (k.indexOf('done:') === 0) {
+      const d = parseIso_(props.getProperty(k));
+      if (d && d < cutoff) props.deleteProperty(k);
+    } else if (k.indexOf('alert:') === 0 || k.indexOf('missing:') === 0) {
+      const d = parseIso_(k.slice(k.lastIndexOf(':') + 1));
+      if (d && d < cutoff) props.deleteProperty(k);
+    }
   });
 }
 
@@ -358,7 +402,7 @@ function parseRegister_(values, reportDate) {
 
     const o = {};
     FEED_HEADERS.forEach(function (f) { o[f] = ''; });
-    Object.keys(col).forEach(function (f) { o[f] = typeof raw[col[f]] === 'string' ? clean_(raw[col[f]]) : raw[col[f]]; });
+    Object.keys(col).forEach(function (f) { o[f] = asText_(raw[col[f]]); });   // dates and numbers re-read below
     o['JO Number'] = jo;
     o['Mode'] = kind === 'AIR' ? 'Air' : 'Sea';        // from the register, never from the goods
 
@@ -463,8 +507,26 @@ function cellKey_(v) {
   return String(v).trim();
 }
 
+/**
+ * Cell formats for each contract column. Text columns are forced to plain
+ * text: otherwise Sheets turns an FSA number like "1294-07-26" into a date
+ * and drops leading zeros from BL numbers.
+ */
+function formatsFor_(rows) {
+  const row = FEED_HEADERS.map(function (f) {
+    if (DATE_FIELDS.indexOf(f) !== -1 || f === 'Delivered' || f === 'Last Updated' || f === 'Source Report Date') return 'yyyy-mm-dd';
+    if (NUMBER_FIELDS.indexOf(f) !== -1) return '0';
+    return '@';
+  });
+  const out = [];
+  for (var i = 0; i < rows; i++) out.push(row);
+  return out;
+}
+
 /** Write LogiSys Live in ONE operation, then append the archive. */
 function writePlan_(ss, plan) {
+  // Dates are stored and shown as Manila days, for Penny and for people.
+  if (ss.getSpreadsheetTimeZone() !== IMPORTER.TZ) ss.setSpreadsheetTimeZone(IMPORTER.TZ);
   const live = ownedSheet_(ss, IMPORTER.SHEET_LIVE);
   const out = [FEED_HEADERS].concat(plan.live.map(function (o) {
     return FEED_HEADERS.map(function (f) { return o[f] === undefined ? '' : o[f]; });
@@ -474,7 +536,8 @@ function writePlan_(ss, plan) {
     if (i > 0 && !r[0]) throw new Error('row ' + (i + 1) + ' has no JO Number');
   });
   const oldRows = live.getLastRow();
-  live.getRange(1, 1, out.length, FEED_HEADERS.length).setValues(out);
+  live.getRange(1, 1, out.length, FEED_HEADERS.length)
+    .setNumberFormats(formatsFor_(out.length)).setValues(out);
   if (oldRows > out.length) {
     live.getRange(out.length + 1, 1, oldRows - out.length, FEED_HEADERS.length).clearContent();
   }
@@ -484,7 +547,8 @@ function writePlan_(ss, plan) {
     const rows = plan.archive.map(function (o) {
       return FEED_HEADERS.map(function (f) { return o[f] === undefined ? '' : o[f]; });
     });
-    arch.getRange(arch.getLastRow() + 1, 1, rows.length, FEED_HEADERS.length).setValues(rows);
+    arch.getRange(arch.getLastRow() + 1, 1, rows.length, FEED_HEADERS.length)
+      .setNumberFormats(formatsFor_(rows.length)).setValues(rows);
   }
 }
 
@@ -573,7 +637,12 @@ function sendCoo_(dry, subject, lines, say) {
 function failLoud_(dry, what, detail, log) {
   log.push('FAILURE: ' + what + ' — ' + detail);
   Logger.log(log[log.length - 1]);
+  // The trigger runs every 15 minutes: tell the COO once a day per problem, not 96 times.
+  const props = PropertiesService.getScriptProperties();
+  const key = 'alert:' + what + ':' + fmt_(dayOf_(new Date()));
+  if (props.getProperty(key)) { log.push('(COO already told today)'); return log.join('\n'); }
   sendCoo_(dry, 'LogiSys importer: ' + what, [detail, 'LogiSys Live was not changed.'], function (s) { log.push(s); });
+  if (!dry) props.setProperty(key, '1');
   return log.join('\n');
 }
 
@@ -587,6 +656,14 @@ function asDay_(v) { return isDate_(v) ? dayOf_(v) : null; }
 function fmt_(d) { return isDate_(d) ? Utilities.formatDate(d, IMPORTER.TZ, 'yyyy-MM-dd') : ''; }
 function fmtLong_(d) { return Utilities.formatDate(d, IMPORTER.TZ, 'd MMM yyyy'); }
 function fmtTime_(d) { return Utilities.formatDate(d, IMPORTER.TZ, 'd MMM yyyy HH:mm'); }
+/**
+ * A text column's value as text. If a spreadsheet already turned an FSA
+ * number like "1294-07-26" into a date, this gives the original text back.
+ */
+function asText_(v) {
+  if (isDate_(v)) return Utilities.formatDate(v, IMPORTER.TZ, 'yyyy-MM-dd');
+  return clean_(v);
+}
 function showRaw_(v) { return isDate_(v) ? Utilities.formatDate(v, IMPORTER.TZ, 'yyyy-MM-dd') : String(v); }
 function parseIso_(s) {
   const x = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');

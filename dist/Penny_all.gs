@@ -1266,6 +1266,14 @@ function execute_(dry) {
   const log = [];
   function say(s) { log.push(s); Logger.log(s); }
 
+  // Every age is counted in Manila calendar days; any other project time zone
+  // would make this morning's feed look a day old.
+  if (Session.getScriptTimeZone() !== CONFIG.TZ) {
+    return fail_(dry, 'project time zone is not Manila',
+      'Penny\'s Apps Script project is set to ' + Session.getScriptTimeZone() + '. Open Project Settings ' +
+      '(gear icon) and set Time zone to (GMT+08:00) Manila.', log);
+  }
+
   // Monday to Friday only
   if (isWeekend_(now) && !dry) { say('Weekend — nothing sent.'); return log.join('\n'); }
 
