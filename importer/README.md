@@ -23,7 +23,7 @@ the Gmail of the account that owns the project, so:
    *Show "appsscript.json"* and paste `appsscript.json` (Asia/Manila time zone; it enables the
    **Drive advanced service**, used to convert Excel attachments).
 3. In `Config.gs`:
-   - `FEED_SPREADSHEET_ID` — the ID of the workbook where Penny is installed (required).
+   - `FEED_SPREADSHEET_ID` — already set to *Philindo Shipments Feed*, owned by ops.philindo@gmail.com and shared with franchisekid43@gmail.com as editor.
    - `FEED_SUBJECTS` — confirm against the first real LogiSys email.
    - `FEED_SENDER` is `no-reply@philindo.com.ph`, LogiSys's sending address. Only emails from it
      with a matching subject are imported.

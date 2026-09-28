@@ -21,7 +21,7 @@ const IMPORTER = {
 
   // The workbook holding LogiSys Live + Archive — the SAME workbook Penny
   // reads. Required: this project is standalone, not bound to that sheet.
-  FEED_SPREADSHEET_ID: '',                     // FILL IN
+  FEED_SPREADSHEET_ID: '1rSR1IQIqY8qbyRAwMjDMOHn71im-UrRpSv6Ocvq0QP0',   // Philindo Shipments Feed (owner ops.philindo@gmail.com)
   SHEET_LIVE: 'LogiSys Live',
   SHEET_ARCHIVE: 'LogiSys Archive',
 
