@@ -27,11 +27,17 @@ const CONFIG = {
   // herself running as anyone else she stops and tells the COO.
   SENDER_ACCOUNT: 'ops.philindo@gmail.com',
 
-  // ---- Shadow mode — ONE switch ----------------------------------------
-  // While this holds an address, EVERY Penny email (handlers, Ariel, COO)
-  // goes to it instead, with a line at the top naming who it was for.
-  // Nobody else receives anything. Set to '' to go live.
-  SHADOW_TO: 'franchisekid43@gmail.com',
+  // ---- Team emails — ONE switch ----------------------------------------
+  // false: handlers and Ariel receive NOTHING; only the COO's email goes out,
+  //        with every pending shipment and its handler in it.
+  // true:  each handler and Ariel get their own email as well.
+  // Off until the COO says so (28 Sep 2026).
+  TEAM_EMAILS: false,
+
+  // ---- Shadow mode ------------------------------------------------------
+  // While this holds an address, every email Penny sends goes to it instead,
+  // with a line at the top naming who it was for. '' = send for real.
+  SHADOW_TO: '',
 
   // ---- Schedule -------------------------------------------------------
   SEND_HOUR: 7,
@@ -1473,8 +1479,10 @@ function planEmails_(Q, arr, notes) {
            '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>';
   }
 
+  const team = CONFIG.TEAM_EMAILS === true;           // off: the COO's email only
+
   // ---- handlers ----
-  Object.keys(byHandler).forEach(function (h) {
+  if (team) Object.keys(byHandler).forEach(function (h) {
     const b = byHandler[h];
     const lists = [b.q1, b.q2, b.q5b, b.q5c];
     const jos = josOf(lists);
@@ -1494,7 +1502,7 @@ function planEmails_(Q, arr, notes) {
 
   // ---- Ariel: stale status and no ETA — data he maintains in LogiSys ----
   const arielJos = josOf([ariel.q4, ariel.q5a]);
-  if (arielJos.length) {
+  if (team && arielJos.length) {
     if (!R.support) {
       cooNotes.push('Ariel has no email address set — his ' + arielJos.length +
                     ' shipment(s) are in this email: ' + arielJos.join(', ') + '.');
@@ -1516,16 +1524,27 @@ function planEmails_(Q, arr, notes) {
     cooNotes.push('No account handler set in LogiSys or the CA Tracker for ' + unassigned.length +
                   ' shipment(s) — they are in this email only: ' + unassigned.join(', ') + '.');
   }
-  Object.keys(rerouted).forEach(function (who) {
+  if (team) Object.keys(rerouted).forEach(function (who) {
     const x = rerouted[who];
     cooNotes.push((x.known ? who + ' has no email address set' :
                    'Account handler "' + who + '" is not in Penny\'s recipient list, so has no address') +
                   ' — ' + x.jos.length + ' shipment(s) for them are in this email: ' + x.jos.join(', ') + '.');
   });
-  const coo = { q1: Q.q1.filter(nonGreen), q2: Q.q2, q5b: Q.q5b, q5c: Q.q5c, q4: Q.q4, q5a: Q.q5a.filter(nonGreen) };
+  // The COO sees who owns each shipment, next to the client.
+  const owned = function (list) {
+    return list.map(function (s) {
+      return Object.assign({}, s, { client: s.client + ' — ' + (s.handler || s.rawHandler || 'no handler') });
+    });
+  };
+  const coo = { q1: owned(Q.q1.filter(nonGreen)), q2: owned(Q.q2), q5b: owned(Q.q5b), q5c: owned(Q.q5c),
+                q4: owned(Q.q4), q5a: owned(Q.q5a.filter(nonGreen)) };
   const cooLists = [coo.q1, coo.q2, coo.q5b, coo.q5c, coo.q4, coo.q5a];
   const cooJos = josOf(cooLists);
   if (!cooJos.length && !Q.q3.length && !cooNotes.length && !arr.monthly) return emails;
+  if (!team && cooJos.length) {
+    cooNotes.unshift('Team emails are off — handlers and Ariel received nothing today. ' +
+                     'Every pending shipment is in this email, with its handler next to the client.');
+  }
 
   const inFree = Q.q1.filter(function (s) { return !s.storageRunning; }).length;
   const storage = Q.q1.filter(function (s) { return s.storageRunning && !s.demurrageRunning; }).length;

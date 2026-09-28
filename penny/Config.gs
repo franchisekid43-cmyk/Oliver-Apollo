@@ -24,11 +24,17 @@ const CONFIG = {
   // herself running as anyone else she stops and tells the COO.
   SENDER_ACCOUNT: 'ops.philindo@gmail.com',
 
-  // ---- Shadow mode — ONE switch ----------------------------------------
-  // While this holds an address, EVERY Penny email (handlers, Ariel, COO)
-  // goes to it instead, with a line at the top naming who it was for.
-  // Nobody else receives anything. Set to '' to go live.
-  SHADOW_TO: 'franchisekid43@gmail.com',
+  // ---- Team emails — ONE switch ----------------------------------------
+  // false: handlers and Ariel receive NOTHING; only the COO's email goes out,
+  //        with every pending shipment and its handler in it.
+  // true:  each handler and Ariel get their own email as well.
+  // Off until the COO says so (28 Sep 2026).
+  TEAM_EMAILS: false,
+
+  // ---- Shadow mode ------------------------------------------------------
+  // While this holds an address, every email Penny sends goes to it instead,
+  // with a line at the top naming who it was for. '' = send for real.
+  SHADOW_TO: '',
 
   // ---- Schedule -------------------------------------------------------
   SEND_HOUR: 7,

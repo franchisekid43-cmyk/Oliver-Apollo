@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **96 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **101 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -41,17 +41,19 @@ and tells the COO.
 | `runPenny()` | The real run |
 | `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers, if they don't exist |
 
-## Shadow mode — on by default
+## Who receives email — two switches
 
 ```
-SHADOW_TO: 'franchisekid43@gmail.com'
+TEAM_EMAILS: false   // handlers and Ariel receive nothing; the COO gets everything
+SHADOW_TO:   ''      // an address here receives every email instead of its recipient
 ```
 
-While `SHADOW_TO` holds an address, **every** Penny email — each handler's, Ariel's, the COO's,
-even a failure notice — goes to that address instead, with a line at the top naming who it was
-for. Nobody else receives anything. Run like this for five working days and check three things:
-the JOs are right, nothing already resolved appears, and the wording reads the way you would say
-it. Then set `SHADOW_TO: ''` to go live.
+- **`TEAM_EMAILS: false`** (current, COO's decision 28 Sep 2026): only the COO's email goes out.
+  It carries every pending shipment with its handler next to the client. Set to `true` when
+  the COO says the team should start receiving theirs.
+- **`SHADOW_TO`**: while it holds an address, every email Penny sends goes there instead,
+  with a line at the top naming who it was for. Use it to preview the team's emails before
+  switching them on.
 
 ## What Penny writes
 

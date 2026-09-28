@@ -146,6 +146,7 @@ function world(opts) {
   const src = FILES.map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
   vm.runInContext(src, ctx, { filename: 'penny.gs' });
   vm.runInContext('CONFIG.SHADOW_TO = ' + JSON.stringify(opts.shadow || ''), ctx);   // tests check real routing
+  vm.runInContext('CONFIG.TEAM_EMAILS = ' + (opts.team === false ? 'false' : 'true'), ctx);
   if (opts.config) opts.config(vm.runInContext('CONFIG', ctx));
   W = { ctx, feed, ca, mail, logs, triggers,
         run: fn => vm.runInContext(fn, ctx),
@@ -527,9 +528,22 @@ test('Shadow mode — every email goes to one address, marked with who it was fo
   check('all emails go to the shadow address', W.mail.length >= 3 && W.mail.every(m => m.to === 'me@example.com'), W.mail.map(m => m.to).join(','));
   check('each is marked with its real recipient', W.mail.some(m => /this email was for <b>Kim Angelu Kong<\/b>/.test(m.htmlBody)) &&
     W.mail.some(m => /this email was for <b>Ariel<\/b>/.test(m.htmlBody)) && W.mail.some(m => /this email was for <b>COO<\/b>/.test(m.htmlBody)));
-  world({ live });
+});
+
+test('Team emails off — only the COO hears from Penny', () => {
+  const live = [ship({ 'JO Number': 'TO-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' }),
+                ship({ 'JO Number': 'TO-2', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) }),
+                ship({ 'JO Number': 'TO-3', 'Account Handler': 'Andrew Mausig', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
+  world({ live, team: false });
+  W.run('runPenny()');
+  check('exactly one email, to the COO', W.mail.length === 1 && W.mail[0].to === COO, W.mail.map(m => m.to).join(','));
+  const h = W.mail[0] ? W.mail[0].htmlBody : '';
+  check('it carries every pending shipment', /TO-1/.test(h) && /TO-2/.test(h) && /TO-3/.test(h));
+  check('it says team emails are off', /Team emails are off/.test(h));
+  check('each shipment shows its handler', /ACME TRADING — Kim Angelu Kong/.test(h) && /ACME TRADING — Andrew Mausig/.test(h));
+  check('no "has no email address" noise while the team is off', !/has no email address set/.test(h));
   const cfg = fs.readFileSync(path.join(DIR, 'Config.gs'), 'utf8');
-  check('shipped config starts in shadow mode', /SHADOW_TO: '[^']+@[^']+'/.test(cfg));
+  check('shipped config: team emails off, sending for real to the COO', /TEAM_EMAILS: false/.test(cfg) && /SHADOW_TO: ''/.test(cfg));
 });
 
 test('Pre-arrival statuses are not "arrived" data gaps', () => {
