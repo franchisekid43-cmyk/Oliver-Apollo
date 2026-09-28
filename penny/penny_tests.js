@@ -247,6 +247,19 @@ test('ETA watch 5b — earlier is worse than later', () => {
   check('ETA removed appears in only one of 5a/5b/5c', in5('E-GONE') === 1, 'appears in ' + in5('E-GONE'));
 });
 
+test('Archive is a change log — an ETA last archived days ago still counts as "previous"', () => {
+  const archive = [
+    ship({ 'JO Number': 'CL-1', 'ETA': daysAhead(10), 'Source Report Date': daysAgo(4) }),   // unchanged since
+    ship({ 'JO Number': 'CL-2', 'ETA': daysAhead(10), 'Source Report Date': daysAgo(4) }),
+    ship({ 'JO Number': 'CL-2', 'ETA': daysAhead(12), 'Source Report Date': daysAgo(2) })    // later state wins
+  ];
+  const live = [ship({ 'JO Number': 'CL-1', 'ETA': daysAhead(7) }), ship({ 'JO Number': 'CL-2', 'ETA': daysAhead(12) })];
+  const Q = runQueues({ live, archive });
+  check('ETA 3 days earlier than the last archived state is red', sevOf(Q, 'q5b', 'CL-1') === 'red');
+  check('compared against the JO\'s LATEST earlier state, not its first', sevOf(Q, 'q5b', 'CL-2') === 'none');
+  check('neither is "new"', Q.q3.length === 0);
+});
+
 test('First run — no prior report means no 5b and no queue 3', () => {
   const live = [ship({ 'JO Number': 'F-1', 'ETA': daysAhead(9) }), ship({ 'JO Number': 'F-2', 'ETA': daysAhead(12) })];
   const Q = runQueues({ live, archive: [] });

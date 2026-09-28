@@ -1,23 +1,29 @@
 # Penny — installation
 
-Six Apps Script files. Tested: **27 assertions passing**, including the free-time ladder,
-the earlier-vs-later ETA asymmetry, the 8-day staleness rule, and a write-verb audit.
+Six Apps Script files plus `appsscript.json`. Tested: **84 checks passing** (`node penny_tests.js`),
+covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
+the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
+
+Penny reads `LogiSys Live` and `LogiSys Archive`, which the **LogiSys importer** writes
+(`../importer/`). Install the importer first; until it runs, `bootstrapFeedSheets()` gives
+you empty sheets to test against.
 
 ## Install
 
-1. Open the Google Sheet that will hold **LogiSys Live** (the one the importer will write to).
+1. Open the Google Sheet that will hold **LogiSys Live** (the one the importer writes to).
    **Extensions → Apps Script.**
 2. Create six files and paste in the contents of each:
    `Config.gs` · `Lib.gs` · `Queues.gs` · `Arrivals.gs` · `Email.gs` · `Main.gs`
-3. In `Config.gs`, fill in `RECIPIENTS.support` (Ariel) and the six handler addresses.
-   A blank address routes that person's section to the COO with a visible note — nothing is dropped.
-4. Run **`bootstrapFeedSheets()`** once. It creates `LogiSys Live` and `LogiSys Archive`
-   with the correct headers so you can test before the importer exists.
-   It never overwrites a sheet that already has data.
-5. Run **`dryRun()`**. Check the execution log: it prints every queue and every email
-   it *would* send, and sends nothing.
+   In **Project Settings**, tick *Show "appsscript.json"* and paste `appsscript.json`
+   (it sets the time zone to Asia/Manila, which every date calculation relies on).
+3. In `Config.gs`, fill in the two blank handler addresses (Andrew Mausig, Jasmin Sawal).
+   A blank address routes that person's shipments to the COO with a visible note — nothing is dropped.
+4. Run **`bootstrapFeedSheets()`** once if the importer has not run yet. It creates `LogiSys Live`
+   and `LogiSys Archive` with the correct headers. It never touches a sheet that already exists.
+5. Run **`dryRun()`**. The execution log prints every queue and every email it *would* send,
+   one line per shipment, and sends and writes nothing.
 6. When the log looks right, run **`setup()`**. Installs the 07:45 Asia/Manila trigger
-   (Monday–Friday) and does one live run.
+   (Monday–Friday, weekends skipped in code) and does one live run.
 
 ## The functions
 
@@ -26,7 +32,7 @@ the earlier-vs-later ETA asymmetry, the 8-day staleness rule, and a write-verb a
 | `setup()` | Installs the 07:45 trigger, then runs once |
 | `dryRun()` | Logs everything, sends nothing, writes nothing |
 | `runPenny()` | The real run |
-| `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers |
+| `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers, if they don't exist |
 
 ## Shadow mode — do this first
 
@@ -37,24 +43,55 @@ and the wording reads the way you would say it. Then switch the real addresses o
 
 ## What Penny writes
 
-Only two sheets, both of which she creates:
+Only sheets she creates, all in the feed workbook:
 
-- `Penny Arrivals` — refreshed every morning
-- `Penny Monthly <Month Year>` — three register tabs, generated on the 7th
+- `Penny Arrivals` — refreshed every working morning
+- `Penny Monthly <Mon YYYY> — SEA FCL / SEA LCL / AIR` — three register tabs, generated on
+  the first working day on or after the 7th
 
 She never writes to the CA Tracker, the Billing Tracker, the Manifest Control,
-`LogiSys Live`, `LogiSys Archive`, or any Philindo web app. The test suite audits this.
+`LogiSys Live`, `LogiSys Archive`, or any Philindo web app. `ownSheet_()` refuses any other
+name, and the test suite audits every write verb in the script and runs a full morning
+against fake sheets to confirm nothing else is touched.
+
+## Arrival — one switch
+
+```
+TRUST_LOGISYS_ATA: false
+```
+
+LogiSys writes its ETA into the ATA field (28 Sep 2026: 33 of 87 arrival dates disagreed with the
+tracker, all in one direction). While this is `false`:
+
+- a LogiSys ATA **different** from that row's ETA is taken as the arrival date;
+- an ATA **equal** to the ETA is not trusted. If a post-arrival milestone
+  (`Container Discharged`, `DO Issued`, `Gatepass Released`, `Payment of Duties and Taxes`,
+  `Final Assesment`) says it arrived, it goes to Ariel as "arrival date not confirmed";
+  otherwise it is treated as not yet arrived and listed for the COO under "LogiSys ATA not used".
+
+Set it to `true` once Ariel updates LogiSys directly. `arrivalOf_()` is the only place it is read.
 
 ## Free time
 
 ```
 STORAGE_FREE_DAYS   = 5   // port storage max free  -> charges from day 6
 DEMURRAGE_FREE_DAYS = 7   // line container min free -> charges from day 8
+RED_LEAD_DAYS       = 2   // red sits this many days before the first charge
 ```
 
 Queue 1 goes **red on day 4** (two days before the first charge) and
-**critical on day 6** (storage running, demurrage two days out).
-If a carrier is tighter than 7 days, change the constant and every threshold moves with it.
+**critical on day 6** (storage running, demurrage two days out). Both are derived by
+`q1Thresholds_()`: change a free period and every threshold moves with it.
+
+## Decisions made in code that the COO may want to revisit
+
+- **CRITICAL in a subject line** is triggered only by shipment-risk items (queues 1, 2, 5b, 5c).
+  Stale status and missing ETAs (queues 4 and 5a) are data work for Ariel and never make a
+  subject CRITICAL — soul.md: "those words are budget, not decoration".
+- **Only this morning's report is queued.** A JO whose row in LogiSys Live carries an older
+  Source Report Date has dropped out of the LogiSys report and is not chased.
+- **The COO email is silent** on a morning with nothing amber or red, no new JOs and no notes.
+- **Ariel's address** is set in `Config.gs` (`arielcaingcoy@philindo.com.ph`) — confirm it.
 
 ## Running the tests
 

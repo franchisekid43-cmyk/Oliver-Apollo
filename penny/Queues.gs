@@ -101,36 +101,34 @@ function currentRows_(rows) {
   };
 }
 
-/** Previous ETA per JO, from the archive's most recent EARLIER report. */
+/**
+ * Each JO's state as of the most recent EARLIER report, from the archive.
+ * The importer archives a row whenever a JO is new or changed, so a JO's
+ * latest archive row dated before today IS its state in yesterday's report.
+ */
 function previousEtas_(ss) {
   const out = {};
   const sh = ss.getSheetByName(CONFIG.SHEET_ARCHIVE);
   if (!sh) return { map: out, available: false };
 
   const t = readTab_(ss, CONFIG.SHEET_ARCHIVE, 1);
-  if (!t.rows.length) return { map: out, available: false };
-
-  // find the newest report date strictly before today
-  var prevDate = null;
+  const T = today_();
+  var asOf = null;
   t.rows.forEach(function (r) {
     const d = validDate_(r['Source Report Date']);
-    if (!d) return;
-    if (d < today_() && (!prevDate || d > prevDate)) prevDate = d;
-  });
-  if (!prevDate) return { map: out, available: false };
-
-  t.rows.forEach(function (r) {
-    const d = validDate_(r['Source Report Date']);
-    if (!d || d.getTime() !== prevDate.getTime()) return;
+    if (!d || d >= T) return;
     const jo = norm_(r['JO Number']);
     if (!jo) return;
+    if (!asOf || d > asOf) asOf = d;
+    if (out[jo] && out[jo]._d > d) return;             // keep the latest earlier state
     // an ETA that was never a valid date cannot be "removed" or "moved"
-    out[jo] = { eta: validDate_(r['ETA']), badEta: isBadDate_(r['ETA']) };
+    out[jo] = { eta: validDate_(r['ETA']), badEta: isBadDate_(r['ETA']), _d: d };
   });
-  return { map: out, available: true, asOf: prevDate };
+  if (!asOf) return { map: {}, available: false };
+  return { map: out, available: true, asOf: asOf };
 }
 
-/** JOs present today but not in the previous report = newly encoded. */
+/** JOs in today's report never seen in an earlier one = newly encoded. */
 function newJos_(rows, prev) {
   if (!prev.available) return [];
   return currentRows_(rows).rows.filter(function (r) {
