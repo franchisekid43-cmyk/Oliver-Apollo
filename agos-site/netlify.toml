@@ -1,0 +1,3 @@
+# Netlify: publish only public/ (base directory is agos-site)
+[build]
+  publish = "public"
