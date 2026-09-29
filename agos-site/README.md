@@ -29,8 +29,10 @@ Go live in three steps: **1** the Sheet, **2** the website, **3** a test sign-up
 
 ## Step 1: the Sheet and its Apps Script (about 10 minutes)
 
-Do this signed in to Google as **helloagos.ph@gmail.com**, so the Sheet belongs to Agos and the
-notification emails come from that account.
+Do this signed in to Google as **helloagos.ph@gmail.com**, so the Sheet belongs to Agos and every email
+comes from that account. The script refuses to send the applicant welcome email from any other account.
+Use an **Incognito window signed in only as helloagos**: with several Google accounts signed in, Apps
+Script can open under the wrong one or fail to open.
 
 1. Go to [sheets.new](https://sheets.new). A blank spreadsheet opens.
 2. Click **Untitled spreadsheet** (top left) and rename it **Agos Sign-ups**.
@@ -134,6 +136,23 @@ Before it went to you, the page was tested in Chromium at desktop, 390 px and 32
 and dark mode, with the Apps Script mocked: saving, the sending state, the thank-you screen, the error
 message (everything typed is kept), both spam traps, and the Pixel events. Only the real Google
 round-trip is left for this step.
+
+## Welcome email
+
+After saving the row and notifying helloagos, the script emails the applicant, using the wording in
+[BRIEF-welcome-email.md](BRIEF-welcome-email.md):
+
+- It goes **only** to the address the applicant typed, from helloagos.ph@gmail.com, shown as "Agos",
+  with replies going to helloagos.
+- It is sent only if the script runs as helloagos.ph@gmail.com. Under any other account it is not sent,
+  so the Philindo address can never reach an applicant.
+- It is skipped for test sign-ups: any word in the Name or Business starting with "test" ("TEST",
+  "Test Co", "Testing"). "Fastest Cargo" or "Contest Freight" still get their welcome.
+- The **Welcome sent** column shows `Yes`, `No (test)`, `Not sent (wrong account)`,
+  `No (invalid email)` or `Failed`. A failed welcome never stops the row saving or the team's notification.
+
+Gmail lets a free account send about 100 emails a day from scripts. Each sign-up uses two (notification
+and welcome), so past roughly 50 sign-ups in a day the emails stop until the next day. Rows still save.
 
 ## Spam protection
 
