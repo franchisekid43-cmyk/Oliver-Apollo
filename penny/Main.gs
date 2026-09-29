@@ -289,13 +289,22 @@ function planEmails_(Q, arr, notes, mode) {
     } else {
       emails.push({
         person: 'Ariel', to: R.support, jos: arielJos, lines: linesOf(ariel),
-        subject: CONFIG.AGENT + ': ' + arielJos.length +       // data work is never CRITICAL
-                 (arielJos.length === 1 ? ' shipment' : ' shipments') + ' to update in LogiSys',
-        html: wrap_(greet('Ariel') + sectionsHtml_([
-          { key: 'q5a', title: 'No ETA recorded — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
-            items: ariel.q5a, note: 'These cannot be planned until an ETA is in LogiSys.' },
-          { key: 'q4', title: TITLES_.q4, items: ariel.q4, note: '' }
-        ]), '')
+        // Friendly and short: a colleague's list, never a scorecard. Data work is never CRITICAL.
+        subject: CONFIG.AGENT + ': your LogiSys update list for today (' + arielJos.length +
+                 (arielJos.length === 1 ? ' shipment)' : ' shipments)'),
+        html: wrap_(
+          '<h2 style="margin:0 0 2px;font-size:17px;">Good morning, Ariel!</h2>' +
+          '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>' +
+          '<p style="margin:12px 0 4px;">Here\'s today\'s short list of shipments that need a quick update in LogiSys. ' +
+          'Thank you for keeping our records up to date — the whole team relies on them.</p>' +
+          sectionsHtml_([
+            { key: 'q4', title: 'Quick updates in LogiSys', items: ariel.q4,
+              note: 'One line each. The last column is what LogiSys shows now.' },
+            { key: 'q5a', title: 'Waiting for an ETA — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
+              items: ariel.q5a, opts: { plain: true },
+              note: 'Once the ETA is in, the team can plan trucking and the cash advance.' }
+          ]) +
+          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', '')
       });
     }
   }
@@ -333,7 +342,7 @@ function planEmails_(Q, arr, notes, mode) {
   const storage = Q.q1.filter(function (s) { return s.storageRunning && !s.demurrageRunning; }).length;
   const demurrage = Q.q1.filter(function (s) { return s.demurrageRunning; }).length;
   const unconfirmed = Q.q4.filter(function (s) {
-    return s.reasons.some(function (r) { return /arrived per status|ATA is blank/.test(r); });
+    return s.reasons.some(function (r) { return /ATA not entered yet|confirm the actual arrival date/.test(r); });
   }).length;
   function kv(k, v, red) {
     return '<tr><td style="padding:4px 18px 4px 0;' + (red ? 'color:#b91c1c;' : '') + '">' + k +

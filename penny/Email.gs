@@ -104,17 +104,19 @@ function q4Html_(items) {
     return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
       s.reasons.map(esc_).join('<br>'), esc_(s.status)];
   });
-  return table_(['JO','Client','What to check','Status'], rows);
+  return table_(['JO','Client','What\'s needed','Status now'], rows);
 }
 
-function q5aHtml_(items) {
+function q5aHtml_(items, o) {
   if (!items.length) return '';
+  const plain = o && o.plain;                        // Ariel's list: no warning chips
   const rows = items.map(function (s) {
-    return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
-      s.etd ? fmtDate_(s.etd) + ' (' + s.etdPast + 'd ago)' : 'no ETD',
-      sevChip_(s.sev)];
+    const r = ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
+      s.etd ? fmtDate_(s.etd) + ' (' + s.etdPast + 'd ago)' : 'no ETD'];
+    if (!plain) r.push(sevChip_(s.sev));
+    return r;
   });
-  return table_(['JO','Client','Departed','' ], rows);
+  return table_(plain ? ['JO','Client','Departed'] : ['JO','Client','Departed',''], rows);
 }
 
 function q5bHtml_(items) {
@@ -169,6 +171,6 @@ function sectionsHtml_(sections) {
   return sections.filter(function (sec) { return sec.items.length; })
     .map(function (sec, i) { return { sec: sec, i: i, r: rank(sec) }; })
     .sort(function (a, b) { return (b.r - a.r) || (a.i - b.i); })
-    .map(function (x) { return section_(x.sec.title, x.sec.note, RENDER_[x.sec.key](x.sec.items)); })
+    .map(function (x) { return section_(x.sec.title, x.sec.note, RENDER_[x.sec.key](x.sec.items, x.sec.opts || {})); })
     .join('');
 }

@@ -360,8 +360,8 @@ function arrivalOf_(r) {
   if (ata && !copied) return { arrived: true, date: ata, doubt: '' };
   if (milestone) {
     return { arrived: true, date: null,
-             doubt: ata ? 'arrived per status, but ATA equals ETA (' + fmtDate_(ata) + ') — arrival date not confirmed'
-                        : 'status says "' + norm_(r['Status']) + '" but ATA is blank' };
+             doubt: ata ? 'ATA shows ' + fmtDate_(ata) + ', the same as the ETA — please confirm the actual arrival date'
+                        : 'marked "' + norm_(r['Status']) + '" — ATA not entered yet' };
   }
   return { arrived: false, date: null,
            doubt: copied ? 'ATA equals ETA with no post-arrival milestone — not treated as arrived' : '' };
@@ -715,7 +715,7 @@ function buildQueues_(rows, hmap, prev) {
         bad[f] = true;
         const shown = isDateObj_(r[f]) ? Utilities.formatDate(r[f], tz_(), 'yyyy-MM-dd') : String(r[f]);
         Q.defects.push({ jo: jo, client: client, field: f, value: shown });
-        flag(base, f + ' "' + shown + '" is not a valid date', 'amber');
+        flag(base, f + ' "' + shown + '" doesn\'t look like a real date', 'amber');
       }
     });
     (cur.notes[jo] || []).forEach(function (n) { flag(base, n, 'amber', { duplicate: true }); });
@@ -724,7 +724,7 @@ function buildQueues_(rows, hmap, prev) {
     if (upd) {
       const sdays = daysBetween_(upd, T);
       if (sdays >= CONFIG.Q4_STALE_RED) {
-        flag(base, 'status unchanged since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
+        flag(base, 'no status update since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
       }
     }
 
@@ -741,7 +741,7 @@ function buildQueues_(rows, hmap, prev) {
     // lodged before the vessel arrives. (With TRUST_LOGISYS_ATA off, these rows
     // were already flagged above as "arrived, date not confirmed".)
     if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_POST_ARRIVAL)) {
-      flag(base, 'status says "' + status + '" but ATA is blank', 'red');
+      flag(base, 'marked "' + status + '" — ATA not entered yet', 'red');
     }
 
     // ---- Queue 1: arrived, not delivered
@@ -1182,17 +1182,19 @@ function q4Html_(items) {
     return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
       s.reasons.map(esc_).join('<br>'), esc_(s.status)];
   });
-  return table_(['JO','Client','What to check','Status'], rows);
+  return table_(['JO','Client','What\'s needed','Status now'], rows);
 }
 
-function q5aHtml_(items) {
+function q5aHtml_(items, o) {
   if (!items.length) return '';
+  const plain = o && o.plain;                        // Ariel's list: no warning chips
   const rows = items.map(function (s) {
-    return ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
-      s.etd ? fmtDate_(s.etd) + ' (' + s.etdPast + 'd ago)' : 'no ETD',
-      sevChip_(s.sev)];
+    const r = ['<b>' + esc_(s.jo) + '</b>', esc_(s.client),
+      s.etd ? fmtDate_(s.etd) + ' (' + s.etdPast + 'd ago)' : 'no ETD'];
+    if (!plain) r.push(sevChip_(s.sev));
+    return r;
   });
-  return table_(['JO','Client','Departed','' ], rows);
+  return table_(plain ? ['JO','Client','Departed'] : ['JO','Client','Departed',''], rows);
 }
 
 function q5bHtml_(items) {
@@ -1247,7 +1249,7 @@ function sectionsHtml_(sections) {
   return sections.filter(function (sec) { return sec.items.length; })
     .map(function (sec, i) { return { sec: sec, i: i, r: rank(sec) }; })
     .sort(function (a, b) { return (b.r - a.r) || (a.i - b.i); })
-    .map(function (x) { return section_(x.sec.title, x.sec.note, RENDER_[x.sec.key](x.sec.items)); })
+    .map(function (x) { return section_(x.sec.title, x.sec.note, RENDER_[x.sec.key](x.sec.items, x.sec.opts || {})); })
     .join('');
 }
 
@@ -1543,13 +1545,22 @@ function planEmails_(Q, arr, notes, mode) {
     } else {
       emails.push({
         person: 'Ariel', to: R.support, jos: arielJos, lines: linesOf(ariel),
-        subject: CONFIG.AGENT + ': ' + arielJos.length +       // data work is never CRITICAL
-                 (arielJos.length === 1 ? ' shipment' : ' shipments') + ' to update in LogiSys',
-        html: wrap_(greet('Ariel') + sectionsHtml_([
-          { key: 'q5a', title: 'No ETA recorded — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
-            items: ariel.q5a, note: 'These cannot be planned until an ETA is in LogiSys.' },
-          { key: 'q4', title: TITLES_.q4, items: ariel.q4, note: '' }
-        ]), '')
+        // Friendly and short: a colleague's list, never a scorecard. Data work is never CRITICAL.
+        subject: CONFIG.AGENT + ': your LogiSys update list for today (' + arielJos.length +
+                 (arielJos.length === 1 ? ' shipment)' : ' shipments)'),
+        html: wrap_(
+          '<h2 style="margin:0 0 2px;font-size:17px;">Good morning, Ariel!</h2>' +
+          '<div style="color:#5b6b60;font-size:12px;">' + fmtDateLong_(today_()) + '</div>' +
+          '<p style="margin:12px 0 4px;">Here\'s today\'s short list of shipments that need a quick update in LogiSys. ' +
+          'Thank you for keeping our records up to date — the whole team relies on them.</p>' +
+          sectionsHtml_([
+            { key: 'q4', title: 'Quick updates in LogiSys', items: ariel.q4,
+              note: 'One line each. The last column is what LogiSys shows now.' },
+            { key: 'q5a', title: 'Waiting for an ETA — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
+              items: ariel.q5a, opts: { plain: true },
+              note: 'Once the ETA is in, the team can plan trucking and the cash advance.' }
+          ]) +
+          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', '')
       });
     }
   }
@@ -1587,7 +1598,7 @@ function planEmails_(Q, arr, notes, mode) {
   const storage = Q.q1.filter(function (s) { return s.storageRunning && !s.demurrageRunning; }).length;
   const demurrage = Q.q1.filter(function (s) { return s.demurrageRunning; }).length;
   const unconfirmed = Q.q4.filter(function (s) {
-    return s.reasons.some(function (r) { return /arrived per status|ATA is blank/.test(r); });
+    return s.reasons.some(function (r) { return /ATA not entered yet|confirm the actual arrival date/.test(r); });
   }).length;
   function kv(k, v, red) {
     return '<tr><td style="padding:4px 18px 4px 0;' + (red ? 'color:#b91c1c;' : '') + '">' + k +

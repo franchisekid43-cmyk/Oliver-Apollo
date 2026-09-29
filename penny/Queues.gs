@@ -258,7 +258,7 @@ function buildQueues_(rows, hmap, prev) {
         bad[f] = true;
         const shown = isDateObj_(r[f]) ? Utilities.formatDate(r[f], tz_(), 'yyyy-MM-dd') : String(r[f]);
         Q.defects.push({ jo: jo, client: client, field: f, value: shown });
-        flag(base, f + ' "' + shown + '" is not a valid date', 'amber');
+        flag(base, f + ' "' + shown + '" doesn\'t look like a real date', 'amber');
       }
     });
     (cur.notes[jo] || []).forEach(function (n) { flag(base, n, 'amber', { duplicate: true }); });
@@ -267,7 +267,7 @@ function buildQueues_(rows, hmap, prev) {
     if (upd) {
       const sdays = daysBetween_(upd, T);
       if (sdays >= CONFIG.Q4_STALE_RED) {
-        flag(base, 'status unchanged since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
+        flag(base, 'no status update since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
       }
     }
 
@@ -284,7 +284,7 @@ function buildQueues_(rows, hmap, prev) {
     // lodged before the vessel arrives. (With TRUST_LOGISYS_ATA off, these rows
     // were already flagged above as "arrived, date not confirmed".)
     if (!arr.arrived && !validDate_(r['ATA']) && containsAny_(status, CONFIG.STATUS_POST_ARRIVAL)) {
-      flag(base, 'status says "' + status + '" but ATA is blank', 'red');
+      flag(base, 'marked "' + status + '" — ATA not entered yet', 'red');
     }
 
     // ---- Queue 1: arrived, not delivered

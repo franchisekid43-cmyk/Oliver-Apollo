@@ -566,7 +566,8 @@ test('Ariel\'s 10:00 update list — his own email, even with team emails off', 
   const h = W.mail[0] ? W.mail[0].htmlBody : '';
   check('it lists his LogiSys updates', /AR-STALE/.test(h) && /AR-NOETA/.test(h));
   check('never another account\'s shipments', !/AR-Q1/.test(h));
-  check('subject: "Penny: 2 shipments to update in LogiSys", not CRITICAL', W.mail[0] && W.mail[0].subject === 'Penny: 2 shipments to update in LogiSys', W.mail[0] && W.mail[0].subject);
+  check('friendly subject, not CRITICAL', W.mail[0] && W.mail[0].subject === 'Penny: your LogiSys update list for today (2 shipments)', W.mail[0] && W.mail[0].subject);
+  check('friendly greeting and thanks, no warning chips', /Good morning, Ariel!/.test(h) && /Thank you, Ariel!/.test(h) && !/ATTENTION|CRITICAL|>RED</.test(h));
   check('the 10:00 run writes nothing', !W.feed.getSheetByName('Penny Arrivals'));
   setNow(2026, 9, 28, 7, 45);
   world({ live, team: true, arielAt10: true });

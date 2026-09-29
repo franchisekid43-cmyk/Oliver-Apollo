@@ -148,8 +148,8 @@ function arrivalOf_(r) {
   if (ata && !copied) return { arrived: true, date: ata, doubt: '' };
   if (milestone) {
     return { arrived: true, date: null,
-             doubt: ata ? 'arrived per status, but ATA equals ETA (' + fmtDate_(ata) + ') — arrival date not confirmed'
-                        : 'status says "' + norm_(r['Status']) + '" but ATA is blank' };
+             doubt: ata ? 'ATA shows ' + fmtDate_(ata) + ', the same as the ETA — please confirm the actual arrival date'
+                        : 'marked "' + norm_(r['Status']) + '" — ATA not entered yet' };
   }
   return { arrived: false, date: null,
            doubt: copied ? 'ATA equals ETA with no post-arrival milestone — not treated as arrived' : '' };
