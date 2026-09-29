@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **101 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **113 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -40,6 +40,18 @@ and tells the COO.
 | `dryRun()` | Logs everything, sends nothing, writes nothing |
 | `runPenny()` | The real run |
 | `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers, if they don't exist |
+
+## Who receives email — today
+
+| Who | When | What |
+|---|---|---|
+| COO | 07:45 | Every pending shipment, with its handler |
+| Ariel | 10:00 | Only the shipments he needs to update in LogiSys (stale status, no ETA, arrival date to confirm) |
+| Handlers | — | Nothing until `TEAM_EMAILS` is `true` |
+
+Ariel's 10:00 email is its own trigger (`runArielReminder`), switched by `ARIEL_REMINDER` and
+independent of `TEAM_EMAILS`. Install it with `setupArielReminder()` — it sends nothing when run.
+`dryRunAriel()` shows what it would send.
 
 ## Who receives email — two switches
 

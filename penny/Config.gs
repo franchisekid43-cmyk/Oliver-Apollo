@@ -31,6 +31,15 @@ const CONFIG = {
   // Off until the COO says so (28 Sep 2026).
   TEAM_EMAILS: false,
 
+  // ---- Ariel's daily update list — its own email, its own time ----------
+  // Ariel gets the shipments he needs to update in LogiSys (stale status, no
+  // ETA, arrival date to confirm) in ONE email at this time, Monday to Friday.
+  // Independent of TEAM_EMAILS: on even while the rest of the team is off.
+  // COO's decision, 29 Sep 2026.
+  ARIEL_REMINDER: true,
+  ARIEL_HOUR: 10,
+  ARIEL_MINUTE: 0,
+
   // ---- Shadow mode ------------------------------------------------------
   // While this holds an address, every email Penny sends goes to it instead,
   // with a line at the top naming who it was for. '' = send for real.

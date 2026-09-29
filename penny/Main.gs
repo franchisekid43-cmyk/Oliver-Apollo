@@ -1,23 +1,37 @@
 /** ============ Penny — entry points ============
- *  setup()   install the 07:45 trigger and run once now
- *  dryRun()  log everything, send nothing, write nothing
- *  runPenny() the real run
+ *  setup()               install both triggers (07:45 and Ariel's 10:00) and run the 07:45 pass once now
+ *  setupArielReminder()  install ONLY Ariel's 10:00 trigger — sends nothing now
+ *  dryRun()              log everything, send nothing, write nothing
+ *  dryRunAriel()         log Ariel's 10:00 email, send nothing
+ *  runPenny()            the 07:45 run
+ *  runArielReminder()    the 10:00 run: Ariel's LogiSys update list only
  */
 
 function setup() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'runPenny') ScriptApp.deleteTrigger(t);
-  });
-  ScriptApp.newTrigger('runPenny').timeBased()
-    .atHour(CONFIG.SEND_HOUR).nearMinute(CONFIG.SEND_MINUTE).everyDays(1)
-    .inTimezone(CONFIG.TZ).create();
-  Logger.log('Trigger installed for %s:%s %s',
-    CONFIG.SEND_HOUR, ('0' + CONFIG.SEND_MINUTE).slice(-2), CONFIG.TZ);
+  installTrigger_('runPenny', CONFIG.SEND_HOUR, CONFIG.SEND_MINUTE);
+  if (CONFIG.ARIEL_REMINDER) installTrigger_('runArielReminder', CONFIG.ARIEL_HOUR, CONFIG.ARIEL_MINUTE);
   runPenny();
 }
 
-function dryRun() { return execute_(true); }
-function runPenny() { return execute_(false); }
+function setupArielReminder() {
+  installTrigger_('runArielReminder', CONFIG.ARIEL_HOUR, CONFIG.ARIEL_MINUTE);
+}
+
+/** One daily trigger per function: an existing one is replaced, never doubled. */
+function installTrigger_(fn, hour, minute) {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === fn) ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger(fn).timeBased()
+    .atHour(hour).nearMinute(minute).everyDays(1)
+    .inTimezone(CONFIG.TZ).create();
+  Logger.log('Trigger installed: %s daily at %s:%s %s', fn, hour, ('0' + minute).slice(-2), CONFIG.TZ);
+}
+
+function dryRun() { return execute_(true, 'morning'); }
+function runPenny() { return execute_(false, 'morning'); }
+function dryRunAriel() { return execute_(true, 'ariel'); }
+function runArielReminder() { return execute_(false, 'ariel'); }
 
 /** Creates LogiSys Live + Archive with the correct headers, for testing
  *  before the importer exists. Safe to run more than once: a sheet that
@@ -45,7 +59,9 @@ function createFeedSheet_(ss, name) {
 }
 
 /** ---------------- the run ---------------- */
-function execute_(dry) {
+function execute_(dry, mode) {
+  mode = mode || 'morning';
+  const ariel = mode === 'ariel';                   // 10:00: Ariel's list only, nothing written
   const now = new Date();
   const log = [];
   function say(s) { log.push(s); Logger.log(s); }
@@ -79,6 +95,10 @@ function execute_(dry) {
 
   // Freshness gate — never run on stale data without saying so
   const stale = stalenessOfFeed_(feed.rows);
+  if (stale && ariel) {                              // the COO was already told at 07:45
+    say('FEED STALE: no LogiSys report today (' + stale + ') — no list for Ariel.');
+    return log.join('\n');
+  }
   if (stale) {
     const day = fmtDateLong_(today_());
     const msg = 'LogiSys feed for ' + day + ' has not arrived. No pending checks run today.';
@@ -125,7 +145,7 @@ function execute_(dry) {
 
   // ---------- arrivals record (Penny's own sheets) ----------
   const arr = { summary: null, monthly: null };
-  try {
+  if (!ariel) try {
     const ships = allShipmentsYtd_(ss, now.getFullYear());
     if (!dry) arr.summary = updateArrivals_(ss, ships, now.getFullYear());
     say('Arrivals YTD: ' + ships.length + ' shipments' + (dry ? ' (dry run — not written)' : ''));
@@ -141,7 +161,7 @@ function execute_(dry) {
   }
 
   // ---------- plan, self-check, send ----------
-  const emails = planEmails_(Q, arr, notes);
+  const emails = planEmails_(Q, arr, notes, mode);
   const problems = selfCheck_(emails, deliveredJos);
   if (problems.length) {
     return fail_(dry, 'self-check failed, nothing sent', problems.join('\n'), log);
@@ -186,7 +206,8 @@ const TITLES_ = {
   q4: 'Status to check in LogiSys', q5a: 'No ETA recorded'
 };
 
-function planEmails_(Q, arr, notes) {
+function planEmails_(Q, arr, notes, mode) {
+  mode = mode || 'morning';
   const R = CONFIG.RECIPIENTS;
   const nonGreen = function (s) { return s.sev !== 'green'; };
   const emails = [];
@@ -259,14 +280,17 @@ function planEmails_(Q, arr, notes) {
 
   // ---- Ariel: stale status and no ETA — data he maintains in LogiSys ----
   const arielJos = josOf([ariel.q4, ariel.q5a]);
-  if (team && arielJos.length) {
+  // Ariel's list goes out at 10:00 on its own (ARIEL_REMINDER), else with the team at 07:45.
+  const arielNow = mode === 'ariel' || (team && !CONFIG.ARIEL_REMINDER);
+  if (arielNow && arielJos.length) {
     if (!R.support) {
       cooNotes.push('Ariel has no email address set — his ' + arielJos.length +
                     ' shipment(s) are in this email: ' + arielJos.join(', ') + '.');
     } else {
       emails.push({
         person: 'Ariel', to: R.support, jos: arielJos, lines: linesOf(ariel),
-        subject: subjectFor(arielJos.length, false),         // data work is never CRITICAL
+        subject: CONFIG.AGENT + ': ' + arielJos.length +       // data work is never CRITICAL
+                 (arielJos.length === 1 ? ' shipment' : ' shipments') + ' to update in LogiSys',
         html: wrap_(greet('Ariel') + sectionsHtml_([
           { key: 'q5a', title: 'No ETA recorded — ' + ariel.q5a.length + ' shipment' + (ariel.q5a.length === 1 ? '' : 's'),
             items: ariel.q5a, note: 'These cannot be planned until an ETA is in LogiSys.' },
@@ -275,6 +299,8 @@ function planEmails_(Q, arr, notes) {
       });
     }
   }
+
+  if (mode === 'ariel') return emails;               // 10:00 run: Ariel's email and nothing else
 
   // ---- COO: everything ----
   if (unassigned.length) {

@@ -148,6 +148,7 @@ function world(opts) {
   vm.runInContext(src, ctx, { filename: 'penny.gs' });
   vm.runInContext('CONFIG.SHADOW_TO = ' + JSON.stringify(opts.shadow || ''), ctx);   // tests check real routing
   vm.runInContext('CONFIG.TEAM_EMAILS = ' + (opts.team === false ? 'false' : 'true'), ctx);
+  vm.runInContext('CONFIG.ARIEL_REMINDER = ' + (opts.arielAt10 ? 'true' : 'false'), ctx);
   if (opts.config) opts.config(vm.runInContext('CONFIG', ctx));
   W = { ctx, feed, ca, mail, logs, triggers,
         run: fn => vm.runInContext(fn, ctx),
@@ -552,6 +553,41 @@ test('Pre-arrival statuses are not "arrived" data gaps', () => {
                 ship({ 'JO Number': 'PA-2', 'ETA': daysAhead(3), 'Status': 'Lodgement of Shipment' })];
   const Q = runQueues({ live });
   check('"Checking of Documents" / "Lodgement" with no ATA are not flagged for Ariel', !Q.q4.some(s => /PA-/.test(s.jo)));
+});
+
+test('Ariel\'s 10:00 update list — his own email, even with team emails off', () => {
+  const live = [ship({ 'JO Number': 'AR-STALE', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) }),
+                ship({ 'JO Number': 'AR-NOETA', 'ETA': '', 'ETD': daysAgo(5) }),
+                ship({ 'JO Number': 'AR-Q1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
+  setNow(2026, 9, 28, 10, 0);
+  world({ live, team: false, arielAt10: true });
+  W.run('runArielReminder()');
+  check('exactly one email, to Ariel', W.mail.length === 1 && W.mail[0].to === ARIEL, W.mail.map(m => m.to).join(','));
+  const h = W.mail[0] ? W.mail[0].htmlBody : '';
+  check('it lists his LogiSys updates', /AR-STALE/.test(h) && /AR-NOETA/.test(h));
+  check('never another account\'s shipments', !/AR-Q1/.test(h));
+  check('subject: "Penny: 2 shipments to update in LogiSys", not CRITICAL', W.mail[0] && W.mail[0].subject === 'Penny: 2 shipments to update in LogiSys', W.mail[0] && W.mail[0].subject);
+  check('the 10:00 run writes nothing', !W.feed.getSheetByName('Penny Arrivals'));
+  setNow(2026, 9, 28, 7, 45);
+  world({ live, team: true, arielAt10: true });
+  W.run('runPenny()');
+  check('07:45 run no longer sends Ariel\'s email (it goes at 10:00)', !W.mail.some(m => m.to === ARIEL));
+  world({ live: [ship({ 'JO Number': 'AR-OK', 'ETA': daysAhead(9) })], arielAt10: true });
+  W.run('runArielReminder()');
+  check('nothing to update -> no email at all', W.mail.length === 0);
+  world({ live: [ship({ 'JO Number': 'AR-OLD', 'Last Updated': daysAgo(12), 'Source Report Date': daysAgo(1) })], arielAt10: true });
+  W.run('runArielReminder()');
+  check('stale feed at 10:00 -> nothing sent (the COO was told at 07:45)', W.mail.length === 0);
+  setNow(2026, 9, 26, 10, 0); world({ live, arielAt10: true }); W.run('runArielReminder()');
+  check('Saturday -> nothing', W.mail.length === 0);
+  setNow(2026, 9, 28, 7, 45);
+  world({ arielAt10: true }); W.run('setupArielReminder()');
+  check('setupArielReminder installs one 10:00 trigger and sends nothing',
+    W.triggers.length === 1 && W.triggers[0].fn === 'runArielReminder' && W.triggers[0].h === 10 && W.mail.length === 0);
+  W.run('setupArielReminder()');
+  check('running it twice still leaves one trigger', W.triggers.length === 1);
+  const cfg = fs.readFileSync(path.join(DIR, 'Config.gs'), 'utf8');
+  check('shipped config: Ariel reminder on at 10:00', /ARIEL_REMINDER: true/.test(cfg) && /ARIEL_HOUR: 10,/.test(cfg));
 });
 
 test('dryRun sends nothing and writes nothing', () => {
