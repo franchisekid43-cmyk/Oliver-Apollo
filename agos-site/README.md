@@ -17,6 +17,12 @@ lender. The page tells customers this, the notification email says every new sig
 verified, and the Sheet refuses a "Forwarded to lenders" tick on a row that is not Agos Verified
 ([how the team uses it](#agos-verified-in-the-sheet)).
 
+**Live now:** the site is at [agosph.netlify.app](https://agosph.netlify.app). It was deployed with Netlify
+Drop and is not linked to GitHub, so to publish a change, drop `public/index.html` on the project's page
+in Netlify. The "Agos Sign-ups" Sheet and its script live in the **ops.philindo@gmail.com** Drive, and the
+script is deployed from that account, so notification emails come from it. `SIGNUP_URL` in the page
+points at that deployment.
+
 Go live in three steps: **1** the Sheet, **2** the website, **3** a test sign-up.
 
 ---
