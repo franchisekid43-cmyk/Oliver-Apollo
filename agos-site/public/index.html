@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agos</title>
+<meta name="description" content="Business financing help for customs brokers, freight forwarders and truckers in the Philippines.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Agos">
+<meta property="og:title" content="Agos">
+<meta property="og:description" content="Business financing help for customs brokers, freight forwarders and truckers in the Philippines.">
+<meta name="theme-color" content="#FBFBFD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233E8BFF'/%3E%3Cstop offset='1' stop-color='%230A5BD3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='30' height='30' rx='10' fill='url(%23g)'/%3E%3Cg transform='translate(5 5) scale(.8333)' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='7.2' r='2.7' fill='%23fff' stroke='none'/%3E%3Cpath d='M2.8 14.6C5.2 11.4 7.6 11.4 10 14.6s4.8 3.2 7.2 0 3.6-2 4-1.6'/%3E%3Cpath d='M2.8 19.2C5.2 16 7.6 16 10 19.2s4.8 3.2 7.2 0 3.6-2 4-1.6' stroke-opacity='.5'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Apple-style centered column. One bold moment: a living "current" of lines in the hero. */
+@property --p{syntax:"<number>";inherits:false;initial-value:100}
+@property --s1{syntax:"<color>";inherits:false;initial-value:#FFFFFF}
+@property --s2{syntax:"<color>";inherits:false;initial-value:#F3F6FC}
+:root{
+  --bg:#FBFBFD; --surface:#FFFFFF; --fg:#16161A; --muted:#696972; --line:#E2E4EA;
+  --accent:#0A5BD3; --accent-2:#3E8BFF; --accent-fg:#FFFFFF; --accent-soft:#EAF1FD; --ok:#1E8E5A; --error:#C4352B;
+  --bg-top:#FFFFFF; --bg-bottom:#EDF1F8; --glass:rgba(255,255,255,.7); --shadow:rgba(10,40,90,.12);
+  --font:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r-field:14px; --r-panel:30px;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0B0D; --surface:#151518; --fg:#F4F4F6; --muted:#9A9AA3; --line:#26262C;
+  --accent:#4C8DFF; --accent-2:#8AB6FF; --accent-fg:#0B0B0D; --accent-soft:#15213A; --ok:#3CCB86; --error:#FF6B5E;
+  --bg-top:#0F1014; --bg-bottom:#070709; --glass:rgba(21,21,24,.72); --shadow:rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0B0D; --surface:#151518; --fg:#F4F4F6; --muted:#9A9AA3; --line:#26262C;
+  --accent:#4C8DFF; --accent-2:#8AB6FF; --accent-fg:#0B0B0D; --accent-soft:#15213A; --ok:#3CCB86; --error:#FF6B5E;
+  --bg-top:#0F1014; --bg-bottom:#070709; --glass:rgba(21,21,24,.72); --shadow:rgba(0,0,0,.5); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{background:var(--bg);color:var(--fg);isolation:isolate;
+  font-family:var(--font);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-inline:20px;overflow-x:hidden}
+
+/* Sky: the page background shifts color as you scroll, with soft light orbs drifting behind */
+.sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+  --s1:#FFFFFF;--s2:#F3F6FC;background:linear-gradient(180deg,var(--s1),var(--s2))}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.orb.o1{width:55vmax;height:55vmax;left:-18vmax;top:-10vmax;background:radial-gradient(circle,#9CC3FF,transparent 65%)}
+.orb.o2{width:48vmax;height:48vmax;right:-16vmax;top:35vh;background:radial-gradient(circle,#C9B8FF,transparent 65%)}
+.orb.o3{width:50vmax;height:50vmax;left:10vmax;top:80vh;background:radial-gradient(circle,#9FE3D6,transparent 65%)}
+@keyframes sky-light{
+  0%{--s1:#FFFFFF;--s2:#F2F6FD}
+  22%{--s1:#EAF2FF;--s2:#F3EFFF}
+  45%{--s1:#F0EEFF;--s2:#E4F4FA}
+  68%{--s1:#E6F6F2;--s2:#FFF0E6}
+  85%{--s1:#FFF3EA;--s2:#FDF6F1}
+  100%{--s1:#F7F8FC;--s2:#EEF2F8}}
+@keyframes sky-dark{
+  0%{--s1:#0B0B0D;--s2:#0D1120}
+  22%{--s1:#0A1328;--s2:#130F2A}
+  45%{--s1:#140F2A;--s2:#0A1C24}
+  68%{--s1:#0A1D1C;--s2:#1E1410}
+  85%{--s1:#1C130F;--s2:#120E0D}
+  100%{--s1:#0B0B0D;--s2:#08080A}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sky{--s1:#0B0B0D;--s2:#0D1120}
+  :root:not([data-theme="light"]) .orb{opacity:.28}}
+:root[data-theme="dark"] .sky{--s1:#0B0B0D;--s2:#0D1120}
+:root[data-theme="dark"] .orb{opacity:.28}
+@supports (animation-timeline:scroll()){
+  .sky{animation:sky-light linear both;animation-timeline:scroll(root)}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sky{animation-name:sky-dark}}
+  :root[data-theme="dark"] .sky{animation-name:sky-dark}
+  @media (prefers-reduced-motion:no-preference){
+    .orb{animation:linear both;animation-timeline:scroll(root)}
+    .orb.o1{animation-name:o1}.orb.o2{animation-name:o2}.orb.o3{animation-name:o3}
+    @keyframes o1{to{transform:translate(30vw,70vh) scale(1.3)}}
+    @keyframes o2{to{transform:translate(-35vw,-20vh) scale(.8)}}
+    @keyframes o3{to{transform:translate(20vw,-60vh) scale(1.2)}}
+  }
+}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.03em;text-wrap:balance}
+p{margin:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1040px;margin-inline:auto}
+.narrow{max-width:640px;margin-inline:auto}
+section{padding-block:104px}
+.sec-title{font-size:clamp(2.1rem,4.8vw,3.4rem);line-height:1.06;text-align:center}
+.sec-sub{color:var(--muted);font-size:clamp(1.05rem,1.8vw,1.25rem);text-align:center;max-width:44ch;margin:16px auto 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+/* Nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding-inline:20px;
+  background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid transparent}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;letter-spacing:-.035em;color:var(--fg)}
+.brand:hover{text-decoration:none}
+.mark{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--accent-2),var(--accent));display:grid;place-items:center;overflow:hidden;
+  box-shadow:0 6px 16px -8px var(--accent);transition:transform .5s var(--ease)}
+.brand:hover .mark{transform:rotate(-8deg) scale(1.08)}
+.mark svg{width:20px;height:20px}
+.mark .wv{animation:none}
+.nav-cta{font-size:14px;font-weight:600;padding:9px 18px;border-radius:999px;background:var(--fg);color:var(--bg);transition:transform .3s var(--ease)}
+.nav-cta:hover{text-decoration:none;transform:translateY(-1px)}
+.arrow{display:inline-block;transition:transform .3s var(--ease)}
+.btn:hover .arrow{transform:translateX(4px)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;cursor:pointer;
+  font:600 17px/1 var(--font);padding:16px 28px;white-space:nowrap;transition:transform .25s var(--ease),box-shadow .25s var(--ease),opacity .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;box-shadow:0 10px 30px -12px var(--accent)}
+.btn-primary:hover{text-decoration:none;transform:translateY(-2px);box-shadow:0 18px 40px -14px var(--accent)}
+.btn-ghost{color:var(--fg);background:var(--glass);border:1px solid var(--line)}
+.btn-ghost:hover{text-decoration:none;transform:translateY(-2px)}
+
+/* Hero */
+.hero{position:relative;padding-block:120px 110px;text-align:center;isolation:isolate}
+#flow{position:absolute;inset:0 -20px;width:calc(100% + 40px);height:100%;z-index:-1;
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 50% 45%,transparent 25%,#000 75%),linear-gradient(#000 70%,transparent);
+  -webkit-mask-composite:source-in;mask-image:radial-gradient(ellipse 60% 55% at 50% 45%,transparent 25%,#000 75%),linear-gradient(#000 70%,transparent);mask-composite:intersect}
+.hero-inner{display:grid;gap:28px;justify-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;padding:7px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--muted)}
+.pill b{color:var(--accent);font-weight:600}
+.hero h1{font-size:clamp(2.8rem,7.4vw,5.6rem);line-height:1.08;letter-spacing:-.045em;font-weight:800;max-width:12ch}
+.hero h1 .hl{background:linear-gradient(100deg,var(--accent),var(--accent-2) 60%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:200% 100%;padding-bottom:.08em}
+.hero p{font-size:clamp(1.1rem,2.1vw,1.4rem);color:var(--muted);max-width:34ch;line-height:1.45}
+.actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+
+/* Gap timeline */
+.gap-card{margin-top:56px;background:var(--glass);border:1px solid var(--line);border-radius:var(--r-panel);padding:clamp(24px,4vw,44px);
+  box-shadow:0 40px 90px -40px var(--shadow);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.gap-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:36px}
+.track{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,2.2fr) minmax(0,1fr);align-items:start;gap:0}
+.track::before{content:"";position:absolute;left:0;right:0;top:11px;height:2px;background:var(--line);border-radius:2px}
+.fill{position:absolute;left:0;right:0;top:11px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--error),var(--error) 36%,var(--accent) 36%,var(--accent-2));transform-origin:left}
+.stop{position:relative;display:grid;gap:10px;padding-right:12px;min-width:0}
+.dot{width:24px;height:24px;border-radius:999px;background:var(--surface);border:2px solid var(--error);display:grid;place-items:center;position:relative;z-index:1}
+.dot::after{content:"";width:8px;height:8px;border-radius:999px;background:var(--error)}
+.stop.in .dot{border-color:var(--ok)} .stop.in .dot::after{background:var(--ok)}
+.day{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.stop strong{font-size:15px;font-weight:600;line-height:1.3}
+.amt{font-family:var(--mono);font-size:13px;color:var(--error);font-variant-numeric:tabular-nums}
+.stop.in .amt{color:var(--ok)}
+.gapzone{position:relative;align-self:stretch;display:grid;place-items:center;padding-top:40px}
+.gapzone span{font-size:14px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:8px 14px;border-radius:999px;white-space:nowrap}
+.gap-foot{margin-top:36px;font-size:clamp(1.05rem,1.8vw,1.2rem);color:var(--muted);text-align:center}
+.gap-foot strong{color:var(--fg)}
+
+/* Lender-ready demo */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:64px;align-items:center}
+.split h2{font-size:clamp(2.1rem,4.6vw,3.3rem);line-height:1.06}
+.split .copy{display:grid;gap:20px}
+.split .copy p{color:var(--muted);font-size:clamp(1.05rem,1.8vw,1.2rem);max-width:40ch}
+.checks{display:grid;gap:10px;margin-top:8px;padding:0;list-style:none}
+.checks li{display:flex;gap:10px;align-items:center;font-size:15px}
+.checks li::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--accent)}
+.file{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);padding:24px;box-shadow:0 50px 100px -40px var(--shadow);position:relative;overflow:hidden}
+.file::before{content:"";position:absolute;inset:-1px -1px auto;height:120px;background:radial-gradient(ellipse at 50% 0,var(--accent-soft),transparent 70%);pointer-events:none}
+.file-head{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.file-head .who{display:grid;gap:2px}
+.file-head .who b{font-size:16px}
+.file-head .who span{font-size:13px;color:var(--muted)}
+.ring{--p:100;width:52px;height:52px;border-radius:999px;display:grid;place-items:center;flex:none;
+  background:conic-gradient(var(--accent) calc(var(--p) * 1%),var(--line) 0);transition:--p .6s var(--ease)}
+.ring span{width:42px;height:42px;border-radius:999px;background:var(--surface);display:grid;place-items:center;font:600 12px var(--mono)}
+.docs{position:relative;list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.doc{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px;border-radius:14px;transition:background .4s}
+.doc.active{background:var(--accent-soft)}
+.doc .ic{width:24px;height:24px;border-radius:999px;border:2px solid var(--line);display:grid;place-items:center;transition:all .4s var(--ease)}
+.doc.done .ic{background:var(--ok);border-color:var(--ok)}
+.doc.done .ic::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:translateY(-1px) rotate(-45deg)}
+.doc.active .ic{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.doc .name{font-size:15px;font-weight:500;min-width:0}
+.doc .st{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.doc.done .st{color:var(--ok)}
+.file-foot{position:relative;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok);transition:opacity .4s,transform .4s var(--ease)}
+.badge.wait{opacity:.35;transform:scale(.94)}
+.matched{font-size:13px;color:var(--muted)}
+.example{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;margin-top:10px}
+
+/* Steps bento */
+.bento{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:56px}
+.tile{border-radius:var(--r-panel);padding:clamp(24px,4vw,40px);display:grid;gap:14px;align-content:start;min-height:240px;position:relative;overflow:hidden;
+  border:1px solid var(--line);transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
+.tile:hover{transform:translateY(-4px);box-shadow:0 40px 80px -40px var(--shadow)}
+.tile .n{font:500 13px var(--mono);opacity:.75}
+.tile h3{font-size:clamp(1.4rem,2.6vw,1.9rem);line-height:1.15}
+.tile p{max-width:44ch;opacity:.85}
+.t1{grid-column:1 / -1;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent;min-height:260px}
+.t1::after{content:"";position:absolute;right:-80px;bottom:-120px;width:360px;height:360px;border-radius:50%;border:48px solid rgba(255,255,255,.12)}
+.t2{background:var(--surface)}
+.t3{background:linear-gradient(160deg,var(--accent-soft),var(--surface) 70%)}
+
+/* Statement */
+.statement{text-align:center;padding-block:140px}
+.statement h2{font-size:clamp(2.4rem,6.4vw,4.8rem);line-height:1.06;letter-spacing:-.045em;max-width:15ch;margin-inline:auto;font-weight:800}
+.statement .accent{color:var(--accent)}
+.statement .tl{margin-top:22px;font-size:clamp(1.1rem,2vw,1.35rem);color:var(--muted);font-style:italic}
+
+/* Founder note */
+.note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,4vw,40px);align-items:center;background:linear-gradient(145deg,var(--accent-soft),var(--surface) 75%);
+  border:1px solid var(--line);border-radius:var(--r-panel);padding:clamp(26px,5vw,52px)}
+.note .big-mark{width:clamp(72px,12vw,112px);height:clamp(72px,12vw,112px);border-radius:28%;background:linear-gradient(135deg,var(--accent-2),var(--accent));display:grid;place-items:center;
+  box-shadow:0 24px 50px -22px var(--accent)}
+.note .big-mark svg{width:62%;height:62%}
+.note blockquote{margin:0;display:grid;gap:14px}
+.note blockquote p{font-size:clamp(1.2rem,2.4vw,1.6rem);line-height:1.4;font-weight:500;letter-spacing:-.015em}
+.note cite{font-style:normal;font-size:14px;color:var(--muted)}
+
+/* Form */
+.signup-head{text-align:center;display:grid;gap:12px;margin-bottom:40px}
+.panel{background:var(--glass);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid var(--line);border-radius:var(--r-panel);padding:clamp(22px,4vw,40px);box-shadow:0 40px 90px -40px var(--shadow)}
+form{display:grid;gap:20px}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.field{display:grid;gap:8px;min-width:0}
+label{font-size:14px;font-weight:500}
+.hint{font-size:13px;color:var(--muted)}
+input[type=text],input[type=email],input[type=tel],select{width:100%;font:400 16px/1.3 var(--font);color:var(--fg);background:var(--bg);
+  border:1px solid var(--line);border-radius:var(--r-field);padding:13px 14px;transition:border-color .2s,box-shadow .2s;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 55%,calc(100% - 15px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}
+input::placeholder{color:var(--muted);opacity:.8}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.field.invalid input,.field.invalid select{border-color:var(--error)}
+.err{font-size:13px;color:var(--error)}
+.consent{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;align-items:start}
+.consent input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent)}
+.consent label{font-weight:400;font-size:14px;color:var(--muted);line-height:1.5}
+.form-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-top:4px}
+.hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.btn[aria-busy="true"]{cursor:progress;opacity:.75;transform:none}
+.form-error{font-size:14px;color:var(--error);background:color-mix(in srgb,var(--error) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--error) 30%,transparent);border-radius:var(--r-field);padding:12px 14px}
+.form-error a{color:inherit;font-weight:600;text-decoration:underline;overflow-wrap:anywhere}
+.success{text-align:center;display:grid;gap:12px;justify-items:center;padding-block:32px}
+.check{width:60px;height:60px;border-radius:999px;background:var(--ok);display:grid;place-items:center}
+.check::after{content:"";width:20px;height:10px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:translateY(-2px) rotate(-45deg)}
+.success h3{font-size:28px}
+.success p{color:var(--muted);max-width:40ch}
+
+/* FAQ */
+details{border-bottom:1px solid var(--line)}
+details:first-of-type{border-top:1px solid var(--line)}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;padding-block:22px;font-size:19px;font-weight:500}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:400;font-size:24px;line-height:1;transition:transform .35s var(--ease)}
+details[open] summary::after{transform:rotate(45deg)}
+details p{color:var(--muted);padding-bottom:22px;max-width:60ch}
+.faq-list{margin-top:40px}
+.contact{margin-top:48px;text-align:center;display:grid;gap:16px;justify-items:center}
+.contact p{color:var(--muted)}
+.contact-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center}
+.addr{font-size:clamp(1.1rem,2.4vw,1.4rem);font-weight:600;user-select:all;overflow-wrap:anywhere}
+.copy{padding:11px 20px;font-size:15px}
+
+footer{border-top:1px solid var(--line);padding-block:40px 56px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
+footer .f-brand{display:grid;gap:4px}
+footer strong{color:var(--fg);font-size:15px}
+footer .legal{max-width:52ch}
+
+/* Motion: resting states are visible; motion only enhances. */
+@media (prefers-reduced-motion:no-preference){
+  .coin{transform-box:fill-box;transform-origin:center;animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+  .tile:hover{transform:translateY(-6px) rotate(-.4deg)}
+  .hero .w{display:inline-block;animation:word 1.2s var(--ease) both;animation-delay:calc(.15s + var(--i) * 80ms)}
+  @keyframes word{from{opacity:0;transform:translateY(24px);filter:blur(12px)}to{opacity:1;transform:none;filter:blur(0)}}
+  .hero h1 .hl{animation:word 1.2s var(--ease) both,sheen 6s ease-in-out 1.6s infinite;animation-delay:calc(.15s + var(--i) * 80ms),1.6s}
+  @keyframes sheen{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+  .rise{animation:rise 1.1s var(--ease) both}
+  .rise.d0{animation-delay:.05s}.rise.d1{animation-delay:.7s}.rise.d2{animation-delay:.9s}
+  @keyframes rise{from{opacity:0;transform:translateY(18px);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
+  #flow{animation:fadein 2s ease both .2s}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .success{animation:rise .8s var(--ease) both}
+  .success .check{animation:pop .8s var(--ease) .1s both}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.08)}100%{transform:none;opacity:1}}
+
+  @supports (animation-timeline:view()){
+    .reveal{animation:reveal linear both;animation-timeline:view();animation-range:entry 0% entry 45%}
+    @keyframes reveal{from{opacity:0;transform:translateY(48px);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+    .reveal-scale{animation:rscale linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
+    @keyframes rscale{from{opacity:0;transform:translateY(60px) scale(.92)}to{opacity:1;transform:none}}
+    .fill{animation:fill linear both;animation-timeline:view();animation-range:entry 30% cover 55%}
+    @keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    .stop{animation:reveal linear both;animation-timeline:view();animation-range:entry calc(20% + var(--i) * 8%) entry calc(60% + var(--i) * 8%)}
+    .tile{animation:rscale linear both;animation-timeline:view();animation-range:entry calc(var(--i) * 8%) entry calc(50% + var(--i) * 8%)}
+    .statement .w{animation:light linear both;animation-timeline:view();animation-range:cover calc(18% + var(--i) * 3.5%) cover calc(30% + var(--i) * 3.5%)}
+    @keyframes light{from{opacity:.12;filter:blur(2px)}to{opacity:1;filter:blur(0)}}
+    .nav{animation:navline linear both;animation-timeline:scroll();animation-range:0 120px}
+    @keyframes navline{to{border-bottom-color:var(--line);box-shadow:0 10px 30px -22px var(--shadow)}}
+  }
+}
+
+@media (max-width:820px){
+  .split{grid-template-columns:minmax(0,1fr);gap:40px}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  section{padding-block:72px}
+  .hero{padding-block:80px 72px}
+  .statement{padding-block:88px}
+  .bento{grid-template-columns:minmax(0,1fr)}
+  .note{grid-template-columns:minmax(0,1fr);justify-items:start}
+  .row{grid-template-columns:minmax(0,1fr)}
+  .form-foot .btn{width:100%}
+  .track{grid-template-columns:minmax(0,1fr);gap:22px;padding-left:36px}
+  .track::before,.fill{left:11px;right:auto;top:0;bottom:0;width:2px;height:auto}
+  .fill{transform-origin:top;background:linear-gradient(180deg,var(--error),var(--error) 55%,var(--accent) 55%,var(--accent-2))}
+  @supports (animation-timeline:view()){@keyframes fill{from{transform:scaleY(0)}to{transform:scaleY(1)}}}
+  .stop{grid-template-columns:auto;padding-right:0}
+  .dot{position:absolute;left:-36px;top:0}
+  .gapzone{padding-top:0;place-items:start}
+}
+</style>
+</head>
+<body>
+
+<div class="sky" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 24 24" fill="none">
+    <circle class="coin" cx="12" cy="7.2" r="2.7" fill="#fff"/>
+    <path d="M2.8 14.6C5.2 11.4 7.6 11.4 10 14.6s4.8 3.2 7.2 0 3.6-2 4-1.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M2.8 19.2C5.2 16 7.6 16 10 19.2s4.8 3.2 7.2 0 3.6-2 4-1.6" stroke="#fff" stroke-opacity=".5" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Agos home">
+      <span class="mark" aria-hidden="true"><svg><use href="#logo"/></svg></span>
+      Agos
+    </a>
+    <a class="nav-cta" href="#signup">Get early access</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <canvas id="flow" aria-hidden="true"></canvas>
+    <div class="hero-inner wrap">
+      <span class="pill rise d0">For customs brokers, forwarders and truckers</span>
+      <h1><span class="w" style="--i:0">Financing</span> <span class="w" style="--i:1">for</span> <span class="w" style="--i:2">the</span> <span class="w" style="--i:3">businesses</span> <span class="w" style="--i:4">that</span> <span class="w hl" style="--i:5">advance everything.</span></h1>
+      <p class="rise d1">You pay the shipping line, the port and the trucker upfront. Agos gets you funded while you wait to be paid.</p>
+      <div class="actions rise d2">
+        <a class="btn btn-primary" href="#signup">Get early access <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#how">How it works</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-labelledby="gap-title">
+    <h2 id="gap-title" class="sec-title reveal">The gap between paying and getting paid.</h2>
+    <div class="gap-card reveal-scale">
+      <div class="gap-meta"><span>One import shipment</span><span>Typical example</span></div>
+      <div class="track">
+        <span class="fill" aria-hidden="true"></span>
+        <div class="stop" style="--i:0"><span class="dot"></span><span class="day">Day 0</span><strong>Shipping line</strong><span class="amt">You pay</span></div>
+        <div class="stop" style="--i:1"><span class="dot"></span><span class="day">Day 1</span><strong>Port charges</strong><span class="amt">You pay</span></div>
+        <div class="stop" style="--i:2"><span class="dot"></span><span class="day">Day 2</span><strong>Trucking</strong><span class="amt">You pay</span></div>
+        <div class="gapzone" style="--i:3"><span>Agos covers this</span></div>
+        <div class="stop in" style="--i:4"><span class="dot"></span><span class="day">Day 45 to 60</span><strong>Client pays you</strong><span class="amt">You're paid back</span></div>
+      </div>
+      <p class="gap-foot">Weeks of your own cash, tied up in someone else's cargo. <strong>Agos keeps it moving.</strong></p>
+    </div>
+  </section>
+
+  <section class="wrap" id="how">
+    <div class="split">
+      <div class="copy reveal">
+        <h2>Lender-ready before any lender sees it.</h2>
+        <p>Most applications stall on a missing permit or an expired ID. Agos checks your file first, and only Agos Verified files go to lenders, so they say yes faster.</p>
+        <ul class="checks">
+          <li>Every document checked for gaps and expiry</li>
+          <li>Your numbers explained in logistics terms</li>
+          <li>Sent only to lenders who fund your industry</li>
+        </ul>
+      </div>
+      <div class="reveal-scale">
+        <div class="file" id="file">
+          <div class="file-head">
+            <div class="who"><b>Bayside Customs Brokerage</b><span>Customs broker · Pasay City</span></div>
+            <div class="ring" id="ring"><span id="pct">100%</span></div>
+          </div>
+          <ul class="docs" id="docs">
+            <li class="doc done"><span class="ic"></span><span class="name">SEC registration</span><span class="st">Verified</span></li>
+            <li class="doc done"><span class="ic"></span><span class="name">Mayor's permit 2026</span><span class="st">Verified</span></li>
+            <li class="doc done"><span class="ic"></span><span class="name">BIR-stamped ITR 2025</span><span class="st">Verified</span></li>
+            <li class="doc done"><span class="ic"></span><span class="name">Bank statements, 6 months</span><span class="st">Verified</span></li>
+            <li class="doc done"><span class="ic"></span><span class="name">Owner's valid ID</span><span class="st">Verified</span></li>
+          </ul>
+          <div class="file-foot">
+            <span class="badge" id="badge">Agos Verified</span>
+            <span class="matched" id="matched">Matched with 3 financing companies</span>
+          </div>
+        </div>
+        <p class="example">Example file for illustration</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2 class="sec-title reveal">Three steps. No running around.</h2>
+    <div class="bento">
+      <div class="tile t1" style="--i:0">
+        <span class="n">Step 1</span>
+        <h3>Tell us about your business</h3>
+        <p>Two minutes. Your business type, location, monthly billings and how much you need. No documents yet.</p>
+      </div>
+      <div class="tile t2" style="--i:1">
+        <span class="n">Step 2</span>
+        <h3>We verify your file</h3>
+        <p>Upload once. We check every document and fix gaps until you're Agos Verified.</p>
+      </div>
+      <div class="tile t3" style="--i:2">
+        <span class="n">Step 3</span>
+        <h3>Lenders compete for you</h3>
+        <p>Once you're Agos Verified, your file goes to SEC-registered lenders who fit. We follow up until release.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="statement">
+    <div class="wrap">
+    <h2><span class="w" style="--i:0">You</span> <span class="w" style="--i:1">advance</span> <span class="w" style="--i:2">for</span> <span class="w" style="--i:3">your</span> <span class="w" style="--i:4">clients.</span> <span class="accent"><span class="w" style="--i:5">We</span> <span class="w" style="--i:6">advance</span> <span class="w" style="--i:7">for</span> <span class="w" style="--i:8">you.</span></span></h2>
+    <p class="tl reveal">Tuloy ang agos ng negosyo.</p>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="note reveal-scale">
+      <span class="big-mark" aria-hidden="true"><svg><use href="#logo"/></svg></span>
+      <blockquote>
+        <p>We run a logistics business too. When clients paid late this year, we spent weeks chasing financing. Agos is the help we wished we had.</p>
+        <cite>The Agos team, Manila</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <section class="narrow" id="signup">
+    <div class="signup-head reveal">
+      <h2 class="sec-title">Get early access</h2>
+      <p class="sec-sub">Free for businesses. Tell us a little about yours.</p>
+    </div>
+
+    <div class="panel reveal-scale">
+      <form id="signup-form" novalidate>
+        <div class="row">
+          <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" autocomplete="name" required>
+            <span class="err" hidden>Enter your name.</span>
+          </div>
+          <div class="field">
+            <label for="business">Business name</label>
+            <input id="business" name="business" type="text" autocomplete="organization" required>
+            <span class="err" hidden>Enter your business name.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="type">Business type</label>
+            <select id="type" name="type" required>
+              <option value="">Select one</option>
+              <option>Customs broker</option>
+              <option>Freight forwarder</option>
+              <option>Trucking</option>
+              <option>Logistics / warehousing</option>
+              <option>Other</option>
+            </select>
+            <span class="err" hidden>Choose your business type.</span>
+          </div>
+          <div class="field">
+            <label for="location">City or province</label>
+            <input id="location" name="location" type="text" placeholder="e.g. Pasay, Batangas" required>
+            <span class="err" hidden>Enter where you operate.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="years">Years operating</label>
+            <select id="years" name="years" required>
+              <option value="">Select one</option>
+              <option>Less than 1 year</option>
+              <option>1 to 2 years</option>
+              <option>3 to 5 years</option>
+              <option>More than 5 years</option>
+            </select>
+            <span class="err" hidden>Choose how long you've operated.</span>
+          </div>
+          <div class="field">
+            <label for="billings">Average monthly billings</label>
+            <select id="billings" name="billings" required>
+              <option value="">Select one</option>
+              <option>Below ₱500K</option>
+              <option>₱500K to ₱2M</option>
+              <option>₱2M to ₱10M</option>
+              <option>Above ₱10M</option>
+            </select>
+            <span class="err" hidden>Choose a range.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="amount">Financing you need</label>
+            <select id="amount" name="amount" required>
+              <option value="">Select one</option>
+              <option>Below ₱500K</option>
+              <option>₱500K to ₱2M</option>
+              <option>₱2M to ₱5M</option>
+              <option>Above ₱5M</option>
+            </select>
+            <span class="err" hidden>Choose an amount.</span>
+          </div>
+          <div class="field">
+            <label for="when">How soon</label>
+            <select id="when" name="when" required>
+              <option value="">Select one</option>
+              <option>Within 2 weeks</option>
+              <option>Within a month</option>
+              <option>In 1 to 3 months</option>
+              <option>Just exploring</option>
+            </select>
+            <span class="err" hidden>Choose a timeframe.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="mobile">Mobile number</label>
+            <input id="mobile" name="mobile" type="tel" autocomplete="tel" placeholder="0917 123 4567" required>
+            <span class="err" hidden>Enter an 11-digit mobile number starting with 09.</span>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+            <span class="err" hidden>Enter a valid email address.</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="consent">
+            <input id="consent" name="consent" type="checkbox" required>
+            <label for="consent">I agree that Agos may contact me and, with my approval, share my business profile with partner lenders, in line with the Data Privacy Act of 2012.</label>
+          </div>
+          <span class="err" hidden>Please agree so we can contact you.</span>
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for="website">Leave this field empty</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <p class="form-error" id="form-error" role="alert" hidden>Sorry, we couldn't save your details just now. Please try again, or email us at <a href="mailto:helloagos.ph@gmail.com">helloagos.ph@gmail.com</a> and we'll sign you up.</p>
+        <div class="form-foot">
+          <span class="hint">No documents needed yet.</span>
+          <button class="btn btn-primary" type="submit">Get early access</button>
+        </div>
+      </form>
+      <div class="success" id="success" hidden>
+        <div class="check" aria-hidden="true"></div>
+        <h3 id="success-title">You're on the list.</h3>
+        <p>Thanks for telling us about your business. The Agos team will reach out soon to get you Agos Verified. Nothing goes to lenders before that.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="narrow">
+    <h2 class="sec-title reveal">Questions</h2>
+    <div class="faq-list reveal">
+      <details>
+        <summary>Is Agos a lender?</summary>
+        <p>No. Agos connects your business with SEC-registered financing companies and prepares your application so it's complete before they see it. The lender makes the final decision.</p>
+      </details>
+      <details>
+        <summary>What does Agos Verified mean?</summary>
+        <p>It means we've checked your business and every document in your file is complete and up to date. We forward your requirements to lenders only after you're Agos Verified, and only with your approval. It isn't a loan approval: the lender still makes the final decision.</p>
+      </details>
+      <details>
+        <summary>Does it cost anything?</summary>
+        <p>No. Signing up and getting matched is free for businesses. Our partner lenders pay us when a loan is released.</p>
+      </details>
+      <details>
+        <summary>What documents will I need later?</summary>
+        <p>Usually your SEC or DTI registration, mayor's permit, BIR-stamped income tax returns, recent bank statements and a valid ID. We'll tell you exactly what's missing.</p>
+      </details>
+      <details id="privacy">
+        <summary>How do you handle my information?</summary>
+        <p>We collect only what's on this form: your name, business details, mobile number and email. We use it to contact you and, only with your approval, to introduce you to partner lenders. We never sell it. To see, correct or delete your information, email us at helloagos.ph@gmail.com.</p>
+      </details>
+    </div>
+    <div class="contact reveal">
+      <p>Still have questions? Email us and a teammate will get back to you.</p>
+      <div class="contact-row">
+        <span class="addr" id="addr">helloagos.ph@gmail.com</span>
+        <button class="btn btn-ghost copy" type="button" id="copy">Copy email</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f-brand"><strong class="brand"><span class="mark" aria-hidden="true"><svg><use href="#logo"/></svg></span>Agos</strong><span>Keep your business flowing.</span><span>helloagos.ph@gmail.com</span></div>
+    <span class="legal">Agos is collecting early interest from logistics businesses and is not a lender. Any financing is provided by SEC-registered financing and lending companies. <a href="#privacy">Privacy notice</a></span>
+  </div>
+</footer>
+
+<script>
+/* ==================== AGOS CONFIG: the only values to edit ==================== */
+// Google Apps Script Web App URL, ending in /exec (README.md, step 1).
+var SIGNUP_URL = 'https://script.google.com/macros/s/AKfycbwFkP3_GcM_TVXxMPcddi6sWIbPUBBjkd9EBbuImWjPDvGhyGwfXK98GdKrh7D7RDsg/exec';
+// Meta Pixel ID, digits only. Empty = tracking off. Read README.md, "Meta Pixel", before switching on.
+var PIXEL_ID = '';
+/* ============================================================================== */
+
+/* ---------- Meta Pixel placeholder: runs only when PIXEL_ID is set ---------- */
+if (PIXEL_ID) {
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+  s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', PIXEL_ID);
+  fbq('track', 'PageView');
+}
+</script>
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- The current: flowing lines behind the hero ---------- */
+  var canvas = document.getElementById('flow');
+  var ctx = canvas.getContext('2d');
+  var W=0,H=0,dpr=1,parts=[],t=0,running=false,raf=0,color='#0A5BD3';
+  function readColor(){ color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0A5BD3'; }
+  function size(){
+    var r = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio||1,2);
+    W = r.width; H = r.height;
+    canvas.width = W*dpr; canvas.height = H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    var n = Math.round(Math.min(900, W*H/900));
+    parts = [];
+    for (var i=0;i<n;i++) parts.push(spawn(true));
+  }
+  function spawn(any){ return {x: any? Math.random()*W : -10, y: Math.random()*H, life: 200+Math.random()*300}; }
+  function angle(x,y){
+    return Math.sin(x*0.0021 + t*0.0006)*0.55 + Math.cos(y*0.0034 - t*0.0005)*0.45 + Math.sin((x+y)*0.0011)*0.3;
+  }
+  function step(){
+    ctx.globalCompositeOperation='destination-out';
+    ctx.fillStyle='rgba(0,0,0,0.07)';
+    ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='source-over';
+    ctx.strokeStyle=color; ctx.globalAlpha=0.42; ctx.lineWidth=1;
+    ctx.beginPath();
+    for (var i=0;i<parts.length;i++){
+      var p=parts[i], a=angle(p.x,p.y), sp=1.3;
+      var nx=p.x+Math.cos(a)*sp+0.9, ny=p.y+Math.sin(a)*sp;
+      ctx.moveTo(p.x,p.y); ctx.lineTo(nx,ny);
+      p.x=nx; p.y=ny; p.life--;
+      if (p.x>W+10||p.y<-10||p.y>H+10||p.life<0) parts[i]=spawn(false);
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+    t++;
+  }
+  function loop(){ step(); raf=requestAnimationFrame(loop); }
+  function start(){ if(!running && !reduce){ running=true; loop(); } }
+  function stop(){ running=false; cancelAnimationFrame(raf); }
+  readColor(); size();
+  if (reduce){ for (var k=0;k<160;k++) step(); }
+  else if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){ es[0].isIntersecting ? start() : stop(); }).observe(canvas);
+  } else start();
+  var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){ size(); if(reduce) for(var k=0;k<160;k++) step(); },150); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColor);
+  new MutationObserver(readColor).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  /* ---------- Lender-ready demo: documents get checked one by one ---------- */
+  var docs = Array.prototype.slice.call(document.querySelectorAll('#docs .doc'));
+  var ring = document.getElementById('ring'), pct = document.getElementById('pct');
+  var badge = document.getElementById('badge'), matched = document.getElementById('matched');
+  function setP(p){ ring.style.setProperty('--p',p); pct.textContent = Math.round(p)+'%'; }
+  var demoTimer=null, demoOn=false;
+  function reset(){
+    docs.forEach(function(d){ d.classList.remove('done','active'); d.querySelector('.st').textContent='Waiting'; });
+    badge.classList.add('wait'); badge.textContent='Checking'; matched.textContent='Not sent to lenders yet';
+    setP(0);
+  }
+  function run(){
+    reset();
+    var i=0;
+    function next(){
+      if (!demoOn) return;
+      if (i>0){ var prev=docs[i-1]; prev.classList.remove('active'); prev.classList.add('done'); prev.querySelector('.st').textContent='Verified'; setP(i/docs.length*100); }
+      if (i<docs.length){
+        docs[i].classList.add('active'); docs[i].querySelector('.st').textContent='Checking';
+        i++; demoTimer=setTimeout(next, 900);
+      } else {
+        badge.classList.remove('wait'); badge.textContent='Agos Verified';
+        matched.textContent='Matched with 3 financing companies';
+        demoTimer=setTimeout(run, 4200);
+      }
+    }
+    demoTimer=setTimeout(next, 500);
+  }
+  if (!reduce && 'IntersectionObserver' in window){
+    new IntersectionObserver(function(es){
+      if (es[0].isIntersecting && !demoOn){ demoOn=true; run(); }
+      else if (!es[0].isIntersecting && demoOn){ demoOn=false; clearTimeout(demoTimer);
+        docs.forEach(function(d){ d.classList.remove('active'); d.classList.add('done'); d.querySelector('.st').textContent='Verified'; });
+        badge.classList.remove('wait'); badge.textContent='Agos Verified'; matched.textContent='Matched with 3 financing companies'; setP(100); }
+    },{threshold:.5}).observe(document.getElementById('file'));
+  }
+
+  /* ---------- Copy email ---------- */
+  var copyBtn = document.getElementById('copy');
+  copyBtn.addEventListener('click', function(){
+    var text = document.getElementById('addr').textContent;
+    function done(){ copyBtn.textContent = 'Copied'; setTimeout(function(){ copyBtn.textContent = 'Copy email'; }, 1800); }
+    function fallback(){ var r = document.createRange(); r.selectNodeContents(document.getElementById('addr'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = 'Selected, press copy'; }
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch(e){ fallback(); }
+  });
+
+  /* ---------- Sign-up form ---------- */
+  var form = document.getElementById('signup-form');
+  var success = document.getElementById('success');
+  var mobileOk = function(v){ return /^09\d{9}$/.test(v.replace(/[\s-]/g,'')); };
+  var emailOk = function(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); };
+  function check(el){
+    var field = el.closest('.field'), ok;
+    if (el.type === 'checkbox') ok = el.checked;
+    else if (el.id === 'mobile') ok = mobileOk(el.value);
+    else if (el.id === 'email') ok = emailOk(el.value);
+    else ok = el.value.trim() !== '';
+    field.classList.toggle('invalid', !ok);
+    var err = field.querySelector('.err'); if (err) err.hidden = ok;
+    el.setAttribute('aria-invalid', ok ? 'false' : 'true');
+    return ok;
+  }
+  ['input','change'].forEach(function(ev){
+    form.addEventListener(ev, function(e){ if (e.target.closest('.field.invalid')) check(e.target); });
+  });
+  var loadedAt = Date.now();
+  var submitBtn = form.querySelector('button[type=submit]');
+  var btnLabel = submitBtn.textContent;
+  var formError = document.getElementById('form-error');
+  var sending = false;
+  function val(id){ return document.getElementById(id).value.trim(); }
+  function showSuccess(){
+    var name = val('name').split(' ')[0];
+    document.getElementById('success-title').textContent = "You're on the list, " + name + ".";
+    form.hidden = true; success.hidden = false;
+  }
+  function setSending(on){
+    sending = on;
+    submitBtn.setAttribute('aria-busy', on ? 'true' : 'false');
+    submitBtn.textContent = on ? 'Sending…' : btnLabel;
+  }
+  // text/plain with JSON inside: a "simple" request, so Apps Script needs no CORS preflight.
+  function save(data){
+    if (!SIGNUP_URL) return Promise.reject(new Error('SIGNUP_URL is not set'));
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 25000) : 0;
+    return fetch(SIGNUP_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(data),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(res){
+      clearTimeout(timer);
+      if (!res || res.ok !== true) throw new Error((res && res.error) || 'not saved');
+    }, function(err){ clearTimeout(timer); throw err; });
+  }
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (sending) return;
+    formError.hidden = true;
+    var first=null;
+    form.querySelectorAll('input[required],select[required]').forEach(function(el){ if(!check(el)&&!first) first=el; });
+    if (first){ first.focus(); return; }
+    var elapsed = Date.now() - loadedAt;
+    var trap = document.getElementById('website').value;
+    // Spam: bots fill the hidden field or submit instantly. They see the thank-you screen; nothing is saved.
+    if (trap || elapsed < 3000){ showSuccess(); return; }
+    setSending(true);
+    save({
+      name: val('name'), business: val('business'), type: val('type'), location: val('location'),
+      years: val('years'), billings: val('billings'), amount: val('amount'), when: val('when'),
+      mobile: val('mobile'), email: val('email'), consent: document.getElementById('consent').checked,
+      website: trap, elapsedMs: elapsed, sourcePage: location.href
+    }).then(function(){
+      setSending(false);
+      showSuccess();
+      if (window.fbq) fbq('track', 'Lead');
+    }, function(err){
+      // Keep everything the person typed; just tell them and let them retry.
+      setSending(false);
+      formError.hidden = false;
+      console.warn('Agos sign-up not saved: ' + (err && err.message));
+    });
+  });
+})();
+</script>
+</body>
+</html>
