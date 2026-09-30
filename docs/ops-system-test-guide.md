@@ -1,7 +1,7 @@
 # Philindo Operations — test version: set-up and what to try
 
-*1 October 2026 · Parts 1–4 of the build brief, on the test system only. The live Command Center, the CA Tracker and
-Manifest Control are not touched.*
+*1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
+The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
 ## 1. Where it is
 
@@ -10,7 +10,8 @@ Manifest Control are not touched.*
   `https://philindo-command-center-git-ops-system-….vercel.app`. Find it in Vercel → your project → **Deployments**
   (the newest one marked *Preview*, branch `ops-system`).
 - The test link works only once it has its own test database (steps below). Until then it shows a page saying
-  "Test database not connected", and it reads and changes nothing.
+  "Test database not connected", and it reads and changes nothing. The same page appears if the test link is ever
+  pointed at the live database by mistake.
 
 ## 2. One-time set-up (about 20 minutes)
 
@@ -50,13 +51,25 @@ Project → **Settings → Environment Variables**.
 
 ## 3. Load the 2026 jobs
 
-**LogiSys migration** (Admin menu) → **Check LogiSys Live**. Nothing is saved yet: you see what would be added and every
-problem found (duplicate JOs, no client, unreadable dates, ATA equal to ETA, FSA numbers turned into dates, statuses
-with no matching milestone, new client names). Then **Import**. Jobs never closed in LogiSys (arrived more than 20 days
-ago) are closed on import unless you untick that box. You can also upload LogiSys Excel/CSV exports the same way.
+**LogiSys migration** (Admin menu) → **Check LogiSys Live** (or upload LogiSys Excel/CSV exports — up to 5 files,
+4 MB in total). It goes in four steps, like your design: *Upload → Match fields → Check → Import*.
+- **Match fields** shows each LogiSys column and where it goes. Columns marked "Not used" are not brought across —
+  tell me if one matters.
+- **Check**: nothing is saved yet. You see what will be added, updated or skipped, and every problem found:
+  duplicate JOs, no client, unreadable dates, ATA equal to ETA, FSA numbers turned into dates, statuses with no
+  matching milestone, new client names, jobs never closed in LogiSys.
+- **Import**. Jobs never closed in LogiSys (arrived more than 20 days ago) are closed on import unless you untick that box.
+
+After that first import, the 8:30 run keeps LogiSys jobs up to date every morning until the switch (not before —
+nothing comes in by itself until you have checked and imported once). It never overwrites anything a person typed
+or changed: a field, a container, a party, or a job someone closed or reopened. A job closed here is never changed
+by LogiSys; if LogiSys still shows it moving, the check lists it so someone can reopen it.
 
 On the test link the 8:30 schedule doesn't run (Vercel only runs schedules on the live site): use **Pull today's
 LogiSys feed now** on the same page to bring in today's statuses.
+
+The same page shows the **JO numbering**: the last number used this year and what the next JO will be. At the switch
+in December you set it to LogiSys's last number, so new JOs carry straight on.
 
 ## 4. Invite the testers
 
@@ -75,18 +88,24 @@ email with a link to choose a password; you can also copy the link and send it b
 
 ## 5. What to try
 
-1. **Status board:** filters (mode, client, handler, stage), search (JO, FSA, PO, HBL, MBL, container), the tiles, the flags.
-2. **New job:** save a draft with only mode, client and ETA — see the JO number it gets (test numbers start at 9001).
-   Fill in the rest, add containers and items, tick the file checklist. Try a duplicate HBL to see the warning.
+1. **Status board:** mode chips and "Needs attention", filters (client, handler, stage), Open / Drafts / Closed / All,
+   search (JO, FSA, PO, HBL, MBL, container), the flags. On a wide screen, click a row: the side panel shows its
+   last and next steps with an **Update** button.
+2. **New job:** pick the mode and watch the JO number preview change (IMP / AIMP / EXP / TRK; test numbers start at
+   9001). Save a draft with only mode, client and ETA. Fill in the rest, add containers and items, tick the documents.
+   Try a duplicate HBL to see the warning.
 3. **Milestones:** on a job, "Done today" or type a date — the stage changes by itself. Try the **Update** button on
    the board. Sign in as a Transport user: only the delivery steps can be changed.
-4. **Access:** as an account handler, open another handler's client — it is read-only. As Management, nothing can be changed.
+4. **Access:** account handlers see every job, but can change only their own clients' jobs — open another handler's
+   job and it is read-only. As Management (Pablo), everything is visible and nothing can be changed.
 5. **History:** every change shows at the bottom of the job, with who and when. It can't be edited.
 6. **Client reports:** Clients page → turn the daily report on for a client and add their emails → Client reports →
    **Copy for Viber** or **Email report** (on the test system the email goes to `TEST_MAIL_TO`, never to the client).
-7. **Admin:** Milestone lists (rename, reorder, hide steps; assign steps to Manifest / Billing / Transport),
-   Change log, Users (deactivate someone and see them signed out).
-8. **Phone:** open the test link on a phone.
+7. **Admin:** Users & roles (invite, change a role, send a password link, deactivate someone and see them signed out,
+   the sign-in activity), Milestone lists (rename, reorder, hide steps; assign steps to Manifest / Billing /
+   Transport; the document checklist), Change log (filter by JO, person, date).
+8. **My account** (your name, bottom left): change your password, see your remembered devices, sign out everywhere.
+9. **Phone:** open the test link on a phone — the menu is behind the ☰ button.
 
 ## 6. Known gaps in this version
 
@@ -94,8 +113,10 @@ email with a link to choose a password; you can also copy the link and send it b
 - **Air import, export and trucking milestone lists are provisional** until you send the real ones. Sea import follows
   your 27 LogiSys steps (the names marked "?" still to confirm; hidden step 7 is switched off).
 - **Manifest steps:** no step is assigned to the Manifest team yet — tell me which ones (or set them on Milestone lists).
-- **Full LogiSys export with milestone history:** the upload reads the register exports now; send me a sample of the full
-  export and I'll add its columns and the milestone history.
+- **Full LogiSys export with milestone history:** the upload reads LogiSys Live and the Sea/Air register exports now
+  (the current status becomes the job's milestone). Send me the full export and I'll add its columns and the whole
+  milestone history.
 - **Penny** stays on the LogiSys Live sheet until cutover. Her feed from the new system is ready at `/api/ops/penny-feed`
   (needs a `PENNY_FEED_TOKEN`), to be switched on in December.
-- The first Command Center pages keep their current look for now.
+- The Command Center pages (Overview, Cash advances, Billing, Manifest) keep their current look for now; they are
+  in the same menu.
