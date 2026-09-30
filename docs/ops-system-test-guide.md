@@ -1,0 +1,101 @@
+# Philindo Operations — test version: set-up and what to try
+
+*1 October 2026 · Parts 1–4 of the build brief, on the test system only. The live Command Center, the CA Tracker and
+Manifest Control are not touched.*
+
+## 1. Where it is
+
+- Code: repo `philindo-command-center`, branch **`ops-system`** (not `main`, so nothing reaches the live site).
+- Vercel builds a **test link** (a "Preview") from that branch automatically. It looks like
+  `https://philindo-command-center-git-ops-system-….vercel.app`. Find it in Vercel → your project → **Deployments**
+  (the newest one marked *Preview*, branch `ops-system`).
+- The test link works only once it has its own test database (steps below). Until then it shows a page saying
+  "Test database not connected", and it reads and changes nothing.
+
+## 2. One-time set-up (about 20 minutes)
+
+Keep passwords and keys out of chats. They go only into Supabase and Vercel.
+
+### A. Supabase — a new, empty test project
+1. supabase.com → your organisation → **New project**. Name: `philindo-ops-test`. Region: the same as the live project.
+   Choose a strong database password and keep it in your password manager.
+2. When it's ready: **Connect** (top of the project page) → **Session pooler** → copy the connection string and put your
+   database password where it says `[YOUR-PASSWORD]`.
+
+### B. Vercel — settings for the test link only
+Project → **Settings → Environment Variables**.
+
+1. **First check `DATABASE_URL`.** It must be ticked for **Production** only. If *Preview* is ticked too, edit it and untick
+   Preview. (Even if you forget, the test link refuses to use a database that isn't the test one, but please check.)
+2. **Add** these, each ticked for **Preview only**:
+
+| Name | Value |
+|---|---|
+| `DATABASE_URL` | the test connection string from A.2 |
+| `FIRST_ADMIN_EMAIL` | your work email, e.g. `transport@philindo.com.ph` — you become the first Admin |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | the same value as Production (the read-only Google key — needed to load LogiSys Live) |
+| `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | the same values as Production (sends sign-in codes and invitations) |
+| `TEST_MAIL_TO` | where the test system's other emails go, e.g. `transport@philindo.com.ph` |
+
+   If Google or SMTP values are already ticked for "All environments", you can leave them as they are.
+3. **Settings → Deployment Protection:** switch **Vercel Authentication** off for Preview deployments (the app has its own
+   sign-in), or your team will be asked for a Vercel account they don't have.
+4. **Deployments** → the newest `ops-system` Preview → **⋯ → Redeploy**. The build prepares the test database by itself.
+
+### C. Your first sign-in
+- The build emails you a "choose your password" link (if SMTP is set). If it doesn't arrive: Vercel → the deployment →
+  **Build Logs** → search for `Set-password link` and open that link. It works once, for 3 days.
+- Sign in with your work email and new password. On a new device you get a 6-digit code by email.
+  (If email isn't set up on the test system, the code is shown on the screen instead — test system only.)
+
+## 3. Load the 2026 jobs
+
+**LogiSys migration** (Admin menu) → **Check LogiSys Live**. Nothing is saved yet: you see what would be added and every
+problem found (duplicate JOs, no client, unreadable dates, ATA equal to ETA, FSA numbers turned into dates, statuses
+with no matching milestone, new client names). Then **Import**. Jobs never closed in LogiSys (arrived more than 20 days
+ago) are closed on import unless you untick that box. You can also upload LogiSys Excel/CSV exports the same way.
+
+On the test link the 8:30 schedule doesn't run (Vercel only runs schedules on the live site): use **Pull today's
+LogiSys feed now** on the same page to bring in today's statuses.
+
+## 4. Invite the testers
+
+**Users** (Admin menu) → **Invite**: name, work email, role, and for account handlers their handler name. They get an
+email with a link to choose a password; you can also copy the link and send it by Viber.
+
+| Role | For |
+|---|---|
+| Admin | you (and the second Admin) |
+| Management | Pablo |
+| Operations | Kim, Andrew, Cherry, Jena, Jimmy, Jasmin — each linked to their handler name |
+| Documentation | Ariel |
+| Manifest | Danica |
+| Billing & CA | Jonathan |
+| Transport | the transport team |
+
+## 5. What to try
+
+1. **Status board:** filters (mode, client, handler, stage), search (JO, FSA, PO, HBL, MBL, container), the tiles, the flags.
+2. **New job:** save a draft with only mode, client and ETA — see the JO number it gets (test numbers start at 9001).
+   Fill in the rest, add containers and items, tick the file checklist. Try a duplicate HBL to see the warning.
+3. **Milestones:** on a job, "Done today" or type a date — the stage changes by itself. Try the **Update** button on
+   the board. Sign in as a Transport user: only the delivery steps can be changed.
+4. **Access:** as an account handler, open another handler's client — it is read-only. As Management, nothing can be changed.
+5. **History:** every change shows at the bottom of the job, with who and when. It can't be edited.
+6. **Client reports:** Clients page → turn the daily report on for a client and add their emails → Client reports →
+   **Copy for Viber** or **Email report** (on the test system the email goes to `TEST_MAIL_TO`, never to the client).
+7. **Admin:** Milestone lists (rename, reorder, hide steps; assign steps to Manifest / Billing / Transport),
+   Change log, Users (deactivate someone and see them signed out).
+8. **Phone:** open the test link on a phone.
+
+## 6. Known gaps in this version
+
+- **File upload:** the file checklist is there; uploading the files themselves needs a storage decision (Supabase Storage).
+- **Air import, export and trucking milestone lists are provisional** until you send the real ones. Sea import follows
+  your 27 LogiSys steps (the names marked "?" still to confirm; hidden step 7 is switched off).
+- **Manifest steps:** no step is assigned to the Manifest team yet — tell me which ones (or set them on Milestone lists).
+- **Full LogiSys export with milestone history:** the upload reads the register exports now; send me a sample of the full
+  export and I'll add its columns and the milestone history.
+- **Penny** stays on the LogiSys Live sheet until cutover. Her feed from the new system is ready at `/api/ops/penny-feed`
+  (needs a `PENNY_FEED_TOKEN`), to be switched on in December.
+- The first Command Center pages keep their current look for now.
