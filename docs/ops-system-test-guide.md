@@ -31,6 +31,20 @@ entries).
   board — to be checked JO by JO from a PDF of its Pending page.
 - The test link brings in LogiSys Live by itself (hourly check), since Vercel runs the 8:30 job on the live site only.
 
+**Oliver's asks of 1 October (evening):**
+- **Shipment Board** (was "Status board") with date filters: This week, Last week, This month, Last month, any month,
+  or Custom dates (from–to), by arrival or by ETD. With dates chosen, open and closed jobs both show.
+- **Download register** on the Shipment Board: tick the columns (remembered on your device), choose Excel or PDF —
+  the file has exactly the jobs the board shows.
+- **New JO numbers continue after the last shipment** (e.g. after IMP0926-1311 comes 1312). Two people saving at the
+  same moment can never get the same number. While LogiSys is still used to open jobs, both could hand out the same
+  number; the LogiSys one is then skipped on the test link and listed on the migration page.
+- **Monthly report** (Admin, Management): the Command Center's arrivals report from this system's jobs — tables, five
+  slides, Viber message and brief. Made by itself at 8:30 AM on the 7th for the month before; any month can be viewed
+  live. The dashboard's arrivals chart uses the same counting (an FCL job with no containers = one 40ft).
+- Menu: "Philindo Logistics", the green **New job** button on top, Address book and Clients at the bottom with Admin.
+  Pages now fade when you click.
+
 **Left for Oliver:** load Unilab's newest tracker on **Unilab tracker**; send a "Print / PDF" of the Command Center's
 Pending page; on **Clients**, set the account handlers you listed (Ambica → Andrew, Fashion Rack → Jimmy,
 Frabelle → Ramil — add him with "+ New account handler…", Indo-Mindanao → Cherry, Nabati Food → Cherry,
@@ -122,11 +136,12 @@ email with a link to choose a password; you can also copy the link and send it b
 
 ## 5. What to try
 
-1. **Status board:** mode chips and "Needs attention", filters (client, handler, stage), Open / Drafts / Closed / All,
+1. **Shipment Board:** date chips (this/last week, this/last month, a month, custom dates; by arrival or ETD), then
+   **Download register** in Excel and PDF with your own columns. Mode chips and "Needs attention", filters (client, handler, stage), Open / Drafts / Closed / All,
    search (JO, FSA, PO, HBL, MBL, container), the flags. On a wide screen, click a row: the side panel shows its
    last and next steps with an **Update** button.
-2. **New job:** pick the mode and watch the JO number preview change (IMP / AIMP / EXP / TRK; test numbers start at
-   9001). Save a draft with only mode, client and ETA. Fill in the rest, add containers and items, tick the documents.
+2. **New job** (green button at the top of the menu): pick the mode and watch the JO number preview change (IMP / AIMP /
+   EXP / TRK; it follows the last shipment of the year). Save a draft with only mode, client and ETA. Fill in the rest, add containers and items, tick the documents.
    Try a duplicate HBL to see the warning.
 3. **Milestones:** on a job, "Done today" or type a date — the stage changes by itself. Try the **Update** button on
    the board. Sign in as a Transport user: only the delivery steps can be changed.
@@ -142,6 +157,8 @@ email with a link to choose a password; you can also copy the link and send it b
 9. **Phone:** open the test link on a phone — the menu is behind the ☰ button.
 10. **Dashboard:** compare the three cards with the live Command Center's Overview (pending should be close; billing
     and cash advances read the same CA Tracker). Point at a month on the arrivals chart; click a card to open its page.
+11. **Monthly report:** open September, compare with the Command Center's September report (after its 7 October run),
+    open the slides, copy the Viber message. From 7 October, 8:30 AM, September's report appears on its own.
 
 ## 6. Known gaps in this version
 
