@@ -21,9 +21,10 @@ Tokens, expiry 1 day). Code: repo `philindo-command-center`, branch `ops-system`
 ## Steps
 1. **Check the keys:** `curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" https://api.supabase.com/v1/organizations`
    and `curl -s -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user` (and `/v2/teams`).
-2. **Supabase:** list projects (`GET /v1/projects`); note the live project's ref and region — do not touch it.
+2. **Supabase:** list projects (`GET /v1/projects`). The live Command Center database may not be in this account at
+   all (Oliver did not see it there, 1 Oct) — that is fine, and safer. If it is listed, note its ref — do not touch it.
    Check the organisation's plan (`GET /v1/organizations/{slug}`) and the cost rule above.
-   Create `philindo-ops-test` in the same organisation and region (`POST /v1/projects` with a generated
+   Create `philindo-ops-test` in the token's organisation, region Singapore (`ap-southeast-1`, nearest Manila), (`POST /v1/projects` with a generated
    `db_pass`: `openssl rand -base64 30 | tr -dc 'A-Za-z0-9' | head -c 32`). Wait until `ACTIVE_HEALTHY`.
    Session-pooler connection string: `GET /v1/projects/{ref}/config/database/pooler` (session mode, port 5432,
    user `postgres.{ref}`), password inserted from the shell variable.
