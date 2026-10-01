@@ -64,7 +64,8 @@ entries).
 **Oliver's asks of 1 October (late) — the last Phase 1 features:**
 - **Client reports:** shipments without an FSA/PO now come last, and "0 PKG" no longer shows.
 - **Client tracking link** (instead of a customer portal): a private link per client, opened without signing in, showing
-  their shipments by stage — **Origin** (country) → **In transit** → **Customs clearance** → **Delivery** →
+  their shipments as a table of raised 3D tiles (they lift toward the mouse) by stage — **Origin** (country) →
+  **In transit** → **Customs clearance** → **Delivery** →
   **Delivered**. Each shipment shows its journey as one raised 3D line running diagonally into the distance — Origin ·
   Departed · Arrived · Cleared · Delivered, the voyage rising as an arch with its shadow below, green up to where the
   shipment is and pale after — with a small ship, plane, truck or container on the line at that point, and an icon
