@@ -3,31 +3,27 @@
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
-## Status, 1 October (morning)
+## Status, 1 October (afternoon)
 
-**Done by Claude:**
-- **Test database:** Supabase project `philindo-ops-test` (free plan, Singapore), in the organisation
-  "philindo-command-center". It is empty until the first test build sets it up.
-- **Vercel test settings (Preview only):** `DATABASE_URL` → the test database, `FIRST_ADMIN_EMAIL` and
-  `TEST_MAIL_TO` → transport@philindo.com.ph, `FIRST_ADMIN_NAME` → Oliver. No Production setting was changed.
+**Set up and working:** test link `philindo-command-center-git-ops-system-philindo.vercel.app` (every push to
+`ops-system` updates it), its own Supabase test project `philindo-ops-test` (Singapore), Oliver signed in as Admin.
+Loaded on the test link: the LogiSys Sea and Air registers (1,309 jobs) and the Organization list (729 address-book
+entries).
 
-**Left for you** (Claude's safety rules don't let it change these) — Vercel → project **philindo-command-center** → **Settings**:
-1. **Deployment Protection** → turn **Vercel Authentication** off → Save. Without this, testers are asked for a
-   Vercel login.
-2. **Git** → **Connect Git Repository** → GitHub → `philindo-command-center`. Until now the site was only deployed
-   by hand, so pushes made no test links.
-3. **Build and Deployment** → **Root Directory** → `web` → Save (the app lives in that folder).
-4. **Deployments** → **Create Deployment** → branch `ops-system` → Create. Its link will be
-   `philindo-command-center-git-ops-system-philindo.vercel.app`. From then on every push to `ops-system` updates it,
-   and a push to `main` updates the live site (as it should).
-5. *Optional:* **Environment Variables** → `GOOGLE_SERVICE_ACCOUNT_JSON`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` →
-   Edit → also tick **Preview** → Save. Without them the test site shows sign-in codes on screen instead of
-   emailing them, and LogiSys data is loaded by uploading the export files instead of from LogiSys Live.
-   If Vercel asks you to type the value again, skip this step.
-6. **Your first sign-in:** the new deployment → **Build Logs** → search `Set-password link` → open that link
-   (works once, for 3 days), choose your password, then sign in with transport@philindo.com.ph.
-7. **Delete the two keys** you made for Claude: Supabase → Account → Access Tokens; Vercel → Account Settings →
-   Tokens.
+**Latest changes (Oliver's asks of 1 October):**
+- **Pending shipments match the live Command Center:** a LogiSys job still open more than 20 days after arrival, or
+  with no ETA and opened before last month, is taken as delivered — the Command Center's own rule (Oliver asked for
+  30 days; 20 is what the live Command Center uses, so the two agree). About 180 old jobs closed this way; about 73
+  stay pending. Each closed one says why in its history. Runs after every LogiSys import and each morning.
+- **Dashboard** (Admin and Management land on it after sign-in): the Command Center's look — 3D gradient cards for
+  Pending shipments, Unbilled shipments and Unliquidated cash advances; the year's arrivals by month (sea FCL, LCL,
+  air, against last year, target 2,500); the manifest board (next sea/air submission, latest manifested, waiting);
+  and "Needs attention today". The old Overview is still at `/overview`.
+
+**Left for Oliver:** on **Clients**, set the account handlers you listed (Ambica → Andrew, Fashion Rack → Jimmy,
+Frabelle → Ramil — add him with "+ New account handler…", Indo-Mindanao → Cherry, Nabati Food → Cherry,
+PT Industri → Jimmy, Triton → Jimmy, Unimex → Jimmy, Union Galva → Andrew, Universal Inkpro → Jena; Tri Globe and
+SCG none). Their jobs without a handler get the same handler.
 
 ## 1. Where it is
 
@@ -132,6 +128,8 @@ email with a link to choose a password; you can also copy the link and send it b
    Transport; the document checklist), Change log (filter by JO, person, date).
 8. **My account** (your name, bottom left): change your password, see your remembered devices, sign out everywhere.
 9. **Phone:** open the test link on a phone — the menu is behind the ☰ button.
+10. **Dashboard:** compare the three cards with the live Command Center's Overview (pending should be close; billing
+    and cash advances read the same CA Tracker). Point at a month on the arrivals chart; click a card to open its page.
 
 ## 6. Known gaps in this version
 
@@ -144,5 +142,5 @@ email with a link to choose a password; you can also copy the link and send it b
   milestone history.
 - **Penny** stays on the LogiSys Live sheet until cutover. Her feed from the new system is ready at `/api/ops/penny-feed`
   (needs a `PENNY_FEED_TOKEN`), to be switched on in December.
-- The Command Center pages (Overview, Cash advances, Billing, Manifest) keep their current look for now; they are
-  in the same menu.
+- The Command Center pages (Cash advances, Billing, Manifest) keep their current look for now; they are in the same
+  menu. Unilab tracker overrides the live Command Center applies to pending shipments are not in the new system yet.
