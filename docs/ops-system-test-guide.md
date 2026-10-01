@@ -3,12 +3,55 @@
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
-## Status, 1 October (afternoon, updated late evening)
+## Status, 1 October (updated late night: Phase 1 final build)
 
 **Set up and working:** test link `philindo-command-center-git-ops-system-philindo.vercel.app` (every push to
 `ops-system` updates it), its own Supabase test project `philindo-ops-test` (Singapore), Oliver signed in as Admin.
 Loaded on the test link: the LogiSys Sea and Air registers (1,309 jobs) and the Organization list (729 address-book
 entries).
+
+**Phase 1 final build (1 October, late night) — everything in one system.** The CA Tracker app and the Manifest
+Control app now live inside the system. How each person uses it: `docs/ops-system-team-guide.md`.
+- **Cash advances** (Finance → Cash advances): account handlers raise **CA requests** (first or supplemental, invoices
+  attached), **liquidate** (with receipts and the acknowledgement) and ask for **offsets**; **Finance** approves (in
+  full or part) or rejects, **releases** the cash (cash, bank transfer, check or GCash; partial allowed), **verifies**
+  or returns each liquidation, decides offsets, follows up **container deposits** and closes job orders. Each request
+  and liquidation prints as a PDF form with signature lines.
+- **Billing updates** (Finance → Billing updates): the billing team's form — status, the five documents, approval,
+  confirmed amount, forward date. On Finance → Billing each unbilled row has a **Billing update** button.
+- **Emails as before:** each liquidation goes to the accountant (acctg4@) with its receipts attached; the **Daily Cash &
+  Billing Brief** goes to transport@ at 9 AM on weekdays; new requests and offsets can also go to Finance (an address
+  is set on the Cash advances page — the old app sent nothing for these).
+- **Manifest** (Shipments → Manifest): **+ Log a shipment**, the duplicate house-bill check ("log anyway" for split
+  shipments), edit any entry, set it Manifested with its registry number; Admin has **Settings** (cutoffs, alert
+  addresses, penalty, pick lists). Alerts go to the manifest staff, supervisor and escalation addresses, as before.
+- **Fixed — manifest deadlines:** the board counted each deadline from the arrival date at midnight and ignored the
+  tagging time, and read "CDEC" from the wrong column. It now counts back from the **tagging date and time** (sea 24 h,
+  air 6 h), exactly as Manifest Control does. Example: MF-2609-031 (air, tagging 5 Oct 12:45) is due 5 Oct 06:45,
+  not 4 Oct 18:00.
+- **Nothing moves until you press the button.** Admin → **Switch-over**: "Copy and compare" reads the CA Tracker or
+  Manifest Control (read only — the sheets are never changed) and shows its figures beside the system's; you can do it
+  as often as you like. "Switch to this system" makes one last copy and from then on the team works here. On the test
+  link this only affects the test system.
+- **Checked against today's sheets:** unliquidated ₱10,405,034.37 / 78 job orders, billed, this month, archive and the
+  35 manifest entries (18 draft, 17 manifested) all come across exactly. Known differences, all the sheets' own errors:
+  the tracker's Dashboard counts only rows 4–100, so it shows 3 requests awaiting approval (₱866K) while 31 job orders
+  (₱4.08M) have no approval and no cash released; IMP0826-1146's offset is counted wrongly by the tracker; IMP0926-1264
+  and IMP0526-0941 have liquidations the tracker never picked up.
+- **Roles to set before the team starts** (Admin → Users & roles): Vicky Mendoza → **Finance**; account handlers →
+  **Operations**; Rapha and Than → **Billing & CA**; Danica → **Manifest**.
+
+**What to try on the test link (in this order):**
+1. Admin → Switch-over → Cash advances → **Copy and compare**; read the comparison. Then **Switch to this system**.
+2. Do the same for Manifest control.
+3. As a handler (or yourself): Finance → Cash advances → **New CA request**; attach an invoice; send.
+4. As Finance: the request is in the **Finance queue** → Decide → approve part of it → **Release**.
+5. As the handler: open the job order → **Set delivery date** → **Liquidate**; attach receipts; submit. Then
+   **Offset excess** to another job order.
+6. As Finance: **Check** the liquidation → Verified; decide the offset. Open the **PDF** buttons.
+7. As the billing team: Finance → Billing updates → **New billing update** for the job order → Billed.
+8. Shipments → Manifest → **+ Log a shipment**; try an HBL already logged; then open the entry and set it Manifested.
+9. Switch-over → **Go back** returns the test system to reading the sheets (what you entered stays but stops counting).
 
 **Latest changes (Oliver's asks of 1 October):**
 - **Pending shipments match the live Command Center:** a LogiSys job still open more than 20 days after arrival, or
