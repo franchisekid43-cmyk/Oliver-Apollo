@@ -65,9 +65,9 @@ entries).
 - **Client reports:** shipments without an FSA/PO now come last, and "0 PKG" no longer shows.
 - **Client tracking link** (instead of a customer portal): a private link per client, opened without signing in, showing
   their shipments by stage — **Origin** (country) → **In transit** → **Customs clearance** → **Delivery** →
-  **Delivered**. Each shipment shows its journey as one simple line — Origin · Departed · Arrived · Cleared · Delivered,
-  the voyage as an arc, green up to where the shipment is and dotted after — with a small ship, plane, truck or container
-  on the line at that point. Opening a shipment, the vehicle glides along the line to its place; the countries and
+  **Delivered**. Each shipment shows its journey as one raised 3D line running diagonally into the distance — Origin ·
+  Departed · Arrived · Cleared · Delivered, the voyage rising as an arch with its shadow below, green up to where the
+  shipment is and pale after — with a small ship, plane, truck or container on the line at that point. Opening a shipment, the vehicle glides along the line to its place; the countries and
   dates are under the points, the details below. Delivered shipments stay on the page for 30 days.
   Made on Admin → Client reports → the client → **Make tracking link**; then **Copy link**, **Open**, **New link** (the
   old one stops working at once) or **Turn off**. While on, the link is added to the Viber text and the report email.
