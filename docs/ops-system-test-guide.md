@@ -20,7 +20,19 @@ entries).
   air, against last year, target 2,500); the manifest board (next sea/air submission, latest manifested, waiting);
   and "Needs attention today". The old Overview is still at `/overview`.
 
-**Left for Oliver:** on **Clients**, set the account handlers you listed (Ambica → Andrew, Fashion Rack → Jimmy,
+**Matching the Command Center (1 October, afternoon):**
+- **Unbilled** follows the CA Tracker: every current "For Billing" row in the Billing Tracker (shown as "Cannot bill
+  yet" and "Awaiting approval") plus delivered JOs no billing tab knows ("not yet with the billing team"), counted from
+  1 September. The CA Tracker is read again whenever the dashboard's copy is over 10 minutes old (Refresh button too).
+  Fixed: jobs closed with no date were counted as delivered today, which inflated the unbilled list.
+- **Pending shipments**: the new system now takes **Unilab's tracker** (page "Unilab tracker"), with the Command
+  Center's rules. With today's LogiSys feed and Unilab's 29 Sep tracker, the Command Center's own code and the new
+  dashboard both give 79. The live Command Center shows 98: the rest comes from older uploads and dates typed on its
+  board — to be checked JO by JO from a PDF of its Pending page.
+- The test link brings in LogiSys Live by itself (hourly check), since Vercel runs the 8:30 job on the live site only.
+
+**Left for Oliver:** load Unilab's newest tracker on **Unilab tracker**; send a "Print / PDF" of the Command Center's
+Pending page; on **Clients**, set the account handlers you listed (Ambica → Andrew, Fashion Rack → Jimmy,
 Frabelle → Ramil — add him with "+ New account handler…", Indo-Mindanao → Cherry, Nabati Food → Cherry,
 PT Industri → Jimmy, Triton → Jimmy, Unimex → Jimmy, Union Galva → Andrew, Universal Inkpro → Jena; Tri Globe and
 SCG none). Their jobs without a handler get the same handler.
