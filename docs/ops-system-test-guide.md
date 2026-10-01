@@ -89,6 +89,9 @@ entries).
   ₱346,017 billing entered earlier, marked as an estimate.
 - With today's CA Tracker: **₱1.40M across 25 job orders** (was ₱0.86M / 18). Billing forwarded ₱8.3M to finance in
   September and ₱1.4M today, so only 3 job orders are left "For Billing".
+- **Mark billed** now starts the date on 10 days after delivery (you can change it). To clear the older jobs already
+  billed in your records: Finance → Billing → "Delivered, not yet with the billing team" → **Mark billed** → **Mark
+  billed** on IMP0826-1165, 1167, 1169, 1170, 1146 (and 1159, 1168, which have no delivery date — pick the date).
 - **Unliquidated ₱10.4M** matches the CA Tracker's own Dashboard exactly. ₱7.2M of it is on job orders already billed
   (liquidation is behind, not billing), ₱2.0M on shipments not delivered yet.
 
