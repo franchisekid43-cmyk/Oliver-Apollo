@@ -67,17 +67,30 @@ entries).
   their shipments as a table of raised 3D tiles (they lift toward the mouse) by stage — **Origin** (country) →
   **In transit** → **Customs clearance** → **Delivery** →
   **Delivered**. Each row shows just the shipment's details and its status (the stage, with the latest update under
-  it). Opening a shipment shows its journey as one raised 3D line running diagonally into the distance — Origin ·
-  Departed · Arrived · Cleared · Delivered, the voyage rising as an arch with its shadow below, green up to where the
-  shipment is and pale after — with a small ship, plane, truck or container on the line at that point, and an icon
-  under each stage point (green once passed). Opening a shipment, the vehicle glides along the line to its place; the countries and
-  dates are under the points, the details below. Delivered shipments stay on the page for 30 days.
+  it). Opening a shipment shows its journey as one flat line — Origin · Departed · Arrived · Cleared · Delivered —
+  filled in a glowing green up to where the shipment is and pale after, with a small ship, plane, truck or container
+  at the front of the green and an icon under each stage point. The green fills in one stage at a time, each point
+  lighting up as it is reached; then a soft light runs along it. The countries and dates are under the points, the
+  details below. Delivered shipments stay on the page for 30 days.
   Made on Admin → Client reports → the client → **Make tracking link**; then **Copy link**, **Open**, **New link** (the
   old one stops working at once) or **Turn off**. While on, the link is added to the Viber text and the report email.
   Admin and Documentation can do this for any client, an account handler for their own clients; Management can only
   see and copy it. The page shows how often the client opened it (your own visits while signed in are not counted).
   A client sees only their own shipments and only: their reference, JO, BL, containers or packages, vessel/flight,
   shipping line/airline, from/to, dates, current status and the client remark — never amounts, parties or notes.
+
+**Unbilled checked against the CA Tracker (1 October, night):**
+- **Unbilled is not October only.** It is every job order the Billing Tracker still has as "For Billing" (any month),
+  plus every shipment delivered from 1 September that no billing tab knows ("not yet with the billing team").
+- **Fixed:** six Gentle Supreme jobs from August (IMP0826-1159, 1165, 1167, 1168, 1169, 1170) were left out because
+  LogiSys has no delivery date for them and the system assumed August, though their cash advances were released on
+  3 September. A job with a cash advance released from 1 September now always counts. Also IMP0826-1146.
+- **Fixed:** IMP0826-1180 (Unilab) showed ₱0 because billing saved it again without the amount; it now shows the
+  ₱346,017 billing entered earlier, marked as an estimate.
+- With today's CA Tracker: **₱1.40M across 25 job orders** (was ₱0.86M / 18). Billing forwarded ₱8.3M to finance in
+  September and ₱1.4M today, so only 3 job orders are left "For Billing".
+- **Unliquidated ₱10.4M** matches the CA Tracker's own Dashboard exactly. ₱7.2M of it is on job orders already billed
+  (liquidation is behind, not billing), ₱2.0M on shipments not delivered yet.
 
 **To switch on document reading (about 10 minutes):**
 1. Go to console.anthropic.com and sign up (or sign in) with the company email.
