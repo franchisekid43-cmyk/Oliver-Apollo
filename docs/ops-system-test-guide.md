@@ -3,7 +3,7 @@
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
-## Status, 1 October (afternoon)
+## Status, 1 October (afternoon, updated late evening)
 
 **Set up and working:** test link `philindo-command-center-git-ops-system-philindo.vercel.app` (every push to
 `ops-system` updates it), its own Supabase test project `philindo-ops-test` (Singapore), Oliver signed in as Admin.
@@ -60,6 +60,21 @@ entries).
   shows both; worth checking which is right.
 - **Read from documents** (New job): drop the BL/AWB, invoice and packing list; the system reads them and fills the form;
   a person checks it beside the documents and approves. Switched on once the Claude API key is added (below).
+
+**Oliver's asks of 1 October (late) — the last Phase 1 features:**
+- **Client reports:** shipments without an FSA/PO now come last, and "0 PKG" no longer shows.
+- **Client tracking link** (instead of a customer portal): a private link per client, opened without signing in, showing
+  their shipments by stage — **Origin** (country) → **In transit** → **Customs clearance** → **Delivery** →
+  **Delivered**. Tap a shipment to see a 3D picture of its stage: the port crane loading the ship (or the airport loader
+  for air), the ship or plane heading to the destination country (closer as the ETA nears), the customs officer
+  stamping the papers, the green Philindo truck driving to the warehouse, and the warehouse with a check mark. Below it,
+  the stage steps with dates and the shipment's details. Delivered shipments stay on the page for 30 days.
+  Made on Admin → Client reports → the client → **Make tracking link**; then **Copy link**, **Open**, **New link** (the
+  old one stops working at once) or **Turn off**. While on, the link is added to the Viber text and the report email.
+  Admin and Documentation can do this for any client, an account handler for their own clients; Management can only
+  see and copy it. The page shows how often the client opened it (your own visits while signed in are not counted).
+  A client sees only their own shipments and only: their reference, JO, BL, containers or packages, vessel/flight,
+  shipping line/airline, from/to, dates, current status and the client remark — never amounts, parties or notes.
 
 **To switch on document reading (about 10 minutes):**
 1. Go to console.anthropic.com and sign up (or sign in) with the company email.
@@ -189,6 +204,10 @@ email with a link to choose a password; you can also copy the link and send it b
     For a past shipment use "Accuracy check" at the bottom instead of approving, then Discard.
 12. **Monthly report:** open September, compare with the Command Center's September report (after its 7 October run),
     open the slides, copy the Viber message. From 7 October, 8:30 AM, September's report appears on its own.
+13. **Client tracking link:** Admin → Client reports → a client → **Make tracking link** → **Copy link**. Open it on your
+    phone in a private window (so you are not signed in): tap the stage boxes to filter, search an FSA or container, open
+    a shipment and watch its scene. Check a few stages against the job pages. Then **New link** and open the old one: it
+    must say "This link is not active". **Copy for Viber** now ends with the link.
 
 ## 6. Known gaps in this version
 
