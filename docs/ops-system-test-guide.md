@@ -65,10 +65,10 @@ entries).
 - **Client reports:** shipments without an FSA/PO now come last, and "0 PKG" no longer shows.
 - **Client tracking link** (instead of a customer portal): a private link per client, opened without signing in, showing
   their shipments by stage — **Origin** (country) → **In transit** → **Customs clearance** → **Delivery** →
-  **Delivered**. Tap a shipment to see a 3D picture of its stage: the port crane loading the ship (or the airport loader
-  for air), the ship or plane heading to the destination country (closer as the ETA nears), the customs officer
-  stamping the papers, the green Philindo truck driving to the warehouse, and the warehouse with a check mark. Below it,
-  the stage steps with dates and the shipment's details. Delivered shipments stay on the page for 30 days.
+  **Delivered**. Each shipment shows its journey as one simple line — Origin · Departed · Arrived · Cleared · Delivered,
+  the voyage as an arc, green up to where the shipment is and dotted after — with a small ship, plane, truck or container
+  on the line at that point. Opening a shipment, the vehicle glides along the line to its place; the countries and
+  dates are under the points, the details below. Delivered shipments stay on the page for 30 days.
   Made on Admin → Client reports → the client → **Make tracking link**; then **Copy link**, **Open**, **New link** (the
   old one stops working at once) or **Turn off**. While on, the link is added to the Viber text and the report email.
   Admin and Documentation can do this for any client, an account handler for their own clients; Management can only
@@ -206,7 +206,7 @@ email with a link to choose a password; you can also copy the link and send it b
     open the slides, copy the Viber message. From 7 October, 8:30 AM, September's report appears on its own.
 13. **Client tracking link:** Admin → Client reports → a client → **Make tracking link** → **Copy link**. Open it on your
     phone in a private window (so you are not signed in): tap the stage boxes to filter, search an FSA or container, open
-    a shipment and watch its scene. Check a few stages against the job pages. Then **New link** and open the old one: it
+    a shipment and watch the vehicle glide along its line. Check a few stages against the job pages. Then **New link** and open the old one: it
     must say "This link is not active". **Copy for Viber** now ends with the link.
 
 ## 6. Known gaps in this version
