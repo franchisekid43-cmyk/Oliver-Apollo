@@ -38,7 +38,8 @@ entries).
   the file has exactly the jobs the board shows.
 - **New JO numbers continue after the last shipment** (e.g. after IMP0926-1311 comes 1312). Two people saving at the
   same moment can never get the same number. While LogiSys is still used to open jobs, both could hand out the same
-  number; the LogiSys one is then skipped on the test link and listed on the migration page.
+  number; the daily LogiSys update then skips the LogiSys one (a check on the LogiSys migration page lists it as
+  "Made in the new system"). This ends when new jobs are opened only here.
 - **Monthly report** (Admin, Management): the Command Center's arrivals report from this system's jobs — tables, five
   slides, Viber message and brief. Made by itself at 8:30 AM on the 7th for the month before; any month can be viewed
   live. The dashboard's arrivals chart uses the same counting (an FCL job with no containers = one 40ft).
