@@ -66,7 +66,8 @@ entries).
 - **Client tracking link** (instead of a customer portal): a private link per client, opened without signing in, showing
   their shipments as a table of raised 3D tiles (they lift toward the mouse) by stage — **Origin** (country) →
   **In transit** → **Customs clearance** → **Delivery** →
-  **Delivered**. Each shipment shows its journey as one raised 3D line running diagonally into the distance — Origin ·
+  **Delivered**. Each row shows just the shipment's details and its status (the stage, with the latest update under
+  it). Opening a shipment shows its journey as one raised 3D line running diagonally into the distance — Origin ·
   Departed · Arrived · Cleared · Delivered, the voyage rising as an arch with its shadow below, green up to where the
   shipment is and pale after — with a small ship, plane, truck or container on the line at that point, and an icon
   under each stage point (green once passed). Opening a shipment, the vehicle glides along the line to its place; the countries and
