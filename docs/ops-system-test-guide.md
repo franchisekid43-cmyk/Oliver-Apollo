@@ -46,6 +46,31 @@ entries).
 - Menu: "Philindo Logistics", the green **New job** button on top, Address book and Clients at the bottom with Admin.
   Pages now fade when you click.
 
+**Oliver's asks of 1 October (night):**
+- **Menu:** only Dashboard, Shipments, Finance and Admin; click a section to open its pages. Shipments: Shipment Board,
+  Monthly Shipment Report, Arrivals, Unilab Tracker, Pending Shipments, Manifest. Finance: Billing (unbilled),
+  Unliquidated cash advances, CA requests. Admin: Client reports, Address book, Clients and the admin pages.
+- **Shipment Board:** the date options are in one **Filter** drop-down.
+- **Download register:** choose the columns and put them in your own order, left to right (drag, or the arrows); the
+  window shows the Excel column letters and how the top of the file will look; layouts can be saved by name.
+- **Arrivals:** the year month by month against the three years before, with animated charts (the current month drawn
+  as "so far"), the split by mode, the busiest clients and jobs still waiting for dates.
+- **CA requests:** every request on the CA Tracker and where it stands. Note: the CA Tracker's own Dashboard tab says
+  3 requests pending approval (₱866K), while its rows show 30 with an amount waiting for approval (₱4.06M). The page
+  shows both; worth checking which is right.
+- **Read from documents** (New job): drop the BL/AWB, invoice and packing list; the system reads them and fills the form;
+  a person checks it beside the documents and approves. Switched on once the Claude API key is added (below).
+
+**To switch on document reading (about 10 minutes):**
+1. Go to console.anthropic.com and sign up (or sign in) with the company email.
+2. Add a payment method (Settings → Billing), then set a **monthly spending limit** (Settings → Limits).
+3. Create an API key (Settings → API keys → Create key, name it "Philindo operations test"). Copy it — it is shown once.
+4. In Vercel: the project → Settings → Environment Variables → Add: name `ANTHROPIC_API_KEY`, value = the key,
+   environment **Preview** only (Production later, when we go live). Save.
+5. Redeploy the test link (Deployments → the latest ops-system one → ⋯ → Redeploy), or tell me and I push.
+6. Admin → Document reading then shows "On". Send me the documents of 10 past shipments (sea FCL, sea LCL, air, Unilab
+   and others, at least one scan or phone photo) and we run the accuracy test against their LogiSys records.
+
 **Left for Oliver:** load Unilab's newest tracker on **Unilab tracker**; send a "Print / PDF" of the Command Center's
 Pending page; on **Clients**, set the account handlers you listed (Ambica → Andrew, Fashion Rack → Jimmy,
 Frabelle → Ramil — add him with "+ New account handler…", Indo-Mindanao → Cherry, Nabati Food → Cherry,
@@ -158,7 +183,11 @@ email with a link to choose a password; you can also copy the link and send it b
 9. **Phone:** open the test link on a phone — the menu is behind the ☰ button.
 10. **Dashboard:** compare the three cards with the live Command Center's Overview (pending should be close; billing
     and cash advances read the same CA Tracker). Point at a month on the arrivals chart; click a card to open its page.
-11. **Monthly report:** open September, compare with the Command Center's September report (after its 7 October run),
+11. **Read from documents** (after the key is added): New job → drop the three documents → check the form against the
+    documents (click a field: its words are marked on the page) → tick every HS code "verified" → Approve. The job opens
+    with the files under "Documents on file" and the history says it was read from documents and approved by you.
+    For a past shipment use "Accuracy check" at the bottom instead of approving, then Discard.
+12. **Monthly report:** open September, compare with the Command Center's September report (after its 7 October run),
     open the slides, copy the Viber message. From 7 October, 8:30 AM, September's report appears on its own.
 
 ## 6. Known gaps in this version
