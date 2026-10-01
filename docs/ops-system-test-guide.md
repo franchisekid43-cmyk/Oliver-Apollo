@@ -3,6 +3,32 @@
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
+## Status, 1 October (morning)
+
+**Done by Claude:**
+- **Test database:** Supabase project `philindo-ops-test` (free plan, Singapore), in the organisation
+  "philindo-command-center". It is empty until the first test build sets it up.
+- **Vercel test settings (Preview only):** `DATABASE_URL` → the test database, `FIRST_ADMIN_EMAIL` and
+  `TEST_MAIL_TO` → transport@philindo.com.ph, `FIRST_ADMIN_NAME` → Oliver. No Production setting was changed.
+
+**Left for you** (Claude's safety rules don't let it change these) — Vercel → project **philindo-command-center** → **Settings**:
+1. **Deployment Protection** → turn **Vercel Authentication** off → Save. Without this, testers are asked for a
+   Vercel login.
+2. **Git** → **Connect Git Repository** → GitHub → `philindo-command-center`. Until now the site was only deployed
+   by hand, so pushes made no test links.
+3. **Build and Deployment** → **Root Directory** → `web` → Save (the app lives in that folder).
+4. **Deployments** → **Create Deployment** → branch `ops-system` → Create. Its link will be
+   `philindo-command-center-git-ops-system-philindo.vercel.app`. From then on every push to `ops-system` updates it,
+   and a push to `main` updates the live site (as it should).
+5. *Optional:* **Environment Variables** → `GOOGLE_SERVICE_ACCOUNT_JSON`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` →
+   Edit → also tick **Preview** → Save. Without them the test site shows sign-in codes on screen instead of
+   emailing them, and LogiSys data is loaded by uploading the export files instead of from LogiSys Live.
+   If Vercel asks you to type the value again, skip this step.
+6. **Your first sign-in:** the new deployment → **Build Logs** → search `Set-password link` → open that link
+   (works once, for 3 days), choose your password, then sign in with transport@philindo.com.ph.
+7. **Delete the two keys** you made for Claude: Supabase → Account → Access Tokens; Vercel → Account Settings →
+   Tokens.
+
 ## 1. Where it is
 
 - Code: repo `philindo-command-center`, branch **`ops-system`** (not `main`, so nothing reaches the live site).
