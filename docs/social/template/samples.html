@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: 'Inter'; src: url('inter-latin.woff2') format('woff2'); font-weight: 100 900; font-style: normal; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #ccc; }
+.frame { position: relative; overflow: hidden; font-family: 'Inter', sans-serif; color: #1D1D1F; -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision; margin: 0 0 40px; }
+.post { width: 1080px; height: 1350px; }
+.reel { width: 1080px; height: 1920px; }
+.light { background:
+  radial-gradient(760px 700px at -8% -10%, rgba(183, 235, 143, .62), transparent 64%),
+  radial-gradient(700px 640px at 108% 16%, rgba(127, 214, 154, .32), transparent 64%),
+  radial-gradient(900px 620px at 42% 112%, rgba(212, 247, 174, .70), transparent 64%),
+  radial-gradient(560px 480px at 96% 98%, rgba(255, 222, 168, .26), transparent 66%),
+  linear-gradient(180deg, #F9FDF5 0%, #EEF8E6 100%); }
+.green { color: #F7FCF2; background:
+  radial-gradient(900px 800px at 6% -6%, rgba(143, 216, 95, .45), transparent 60%),
+  linear-gradient(135deg, #34A853 0%, #1E7A3A 55%, #17602D 100%); }
+.eyebrow { font-size: 21px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #1E7A3A; }
+.green .eyebrow { color: #CFF5B0; }
+.h { font-weight: 750; letter-spacing: -0.05em; line-height: 1.0; }
+.h > span { display: inline-block; }
+.grad { background: linear-gradient(90deg, #17602D 0%, #1E7A3A 22%, #34A853 62%, #8FD85F 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; padding-bottom: .08em; }
+.grad-light { background: linear-gradient(90deg, #E6F4E4 0%, #CFF5B0 45%, #8FD85F 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; padding-bottom: .08em; }
+.sub { font-size: 34px; line-height: 1.38; font-weight: 500; letter-spacing: -0.015em; color: #3A3A3C; }
+.sub b { color: #1D1D1F; font-weight: 700; }
+.green .sub { color: #E6F4E4; }
+.pill { display: inline-flex; align-items: center; gap: 16px; padding: 20px 40px; border-radius: 999px; background: #1E7A3A; color: #F7FCF2;
+  font-size: 30px; font-weight: 650; letter-spacing: -0.01em; box-shadow: 0 14px 34px rgba(30, 122, 58, .28); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: #8FD85F; display: block; }
+.pill.soft { background: #E6F4E4; color: #1E7A3A; box-shadow: none; padding: 16px 30px; font-size: 26px; }
+.pill.cream { background: #F7FCF2; color: #1E7A3A; box-shadow: 0 14px 34px rgba(10, 50, 20, .30); }
+.foot { position: absolute; bottom: 52px; left: 0; right: 0; text-align: center; font-size: 18px; font-weight: 600; letter-spacing: 3px;
+  text-transform: uppercase; color: rgba(30, 122, 58, .55); }
+.card { background: #fff; border: 1px solid #E8EEE4; border-radius: 28px; box-shadow: 0 10px 40px rgba(30, 90, 45, .08); }
+.float { box-shadow: 0 30px 100px rgba(30, 90, 45, .22), 0 6px 20px rgba(30, 90, 45, .10); }
+.tile { width: 84px; height: 84px; border-radius: 22px; background: #E6F4E4; display: flex; align-items: center; justify-content: center; flex: none; }
+.tile svg { width: 48px; height: 48px; stroke: #1E7A3A; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tile.big { width: 120px; height: 120px; border-radius: 30px; }
+.tile.big svg { width: 66px; height: 66px; }
+.logo-tile { position: relative; width: 200px; height: 200px; border-radius: 48px; background: linear-gradient(160deg, #FFFFFF 0%, #F4FAEF 100%);
+  border: 1px solid rgba(30, 122, 58, .10); box-shadow: 0 24px 60px rgba(30, 90, 45, .18), 0 4px 12px rgba(30, 90, 45, .08), inset 0 1px 0 #fff;
+  display: flex; align-items: center; justify-content: center; }
+.logo-tile img { width: 142px; height: auto; }
+.logo-wrap { position: relative; }
+.logo-wrap::before { content: ''; position: absolute; inset: 16px; border-radius: 50px; background: #34A853; filter: blur(42px); opacity: .45; transform: translateY(24px); }
+.green .logo-wrap::before { background: #0E3F1C; opacity: .6; }
+.center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+/* carousel */
+.car { padding: 96px; display: flex; flex-direction: column; }
+.car .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.car .mark { width: 74px; height: auto; }
+.prog { position: absolute; left: 96px; right: 96px; bottom: 74px; display: flex; align-items: center; gap: 24px; }
+.prog .track { flex: 1; height: 6px; border-radius: 3px; background: rgba(30, 122, 58, .14); overflow: hidden; }
+.prog .fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #1E7A3A, #34A853 60%, #8FD85F); box-shadow: 0 0 14px rgba(52, 168, 83, .6); }
+.prog .n { font-size: 20px; font-weight: 650; color: rgba(30, 122, 58, .7); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+.prog .brand { font-size: 18px; font-weight: 650; letter-spacing: 3px; text-transform: uppercase; color: rgba(30, 122, 58, .55); }
+.green .prog .track { background: rgba(247, 252, 242, .22); }
+.green .prog .fill { background: linear-gradient(90deg, #CFF5B0, #8FD85F); }
+.green .prog .n, .green .prog .brand { color: rgba(247, 252, 242, .75); }
+.num { font-size: 190px; font-weight: 750; letter-spacing: -0.06em; line-height: .9; }
+.title { font-size: 68px; font-weight: 750; letter-spacing: -0.04em; line-height: 1.04; }
+.body { font-size: 36px; line-height: 1.4; font-weight: 450; letter-spacing: -0.015em; color: #3A3A3C; }
+.tip { display: flex; gap: 22px; align-items: flex-start; padding: 30px 34px; }
+.tip p { font-size: 29px; line-height: 1.4; color: #3A3A3C; letter-spacing: -0.01em; }
+.tip b { color: #1E7A3A; font-weight: 700; }
+.tip .dot { width: 14px; height: 14px; border-radius: 50%; background: #34A853; box-shadow: 0 0 0 7px #E6F4E4; flex: none; margin-top: 12px; }
+
+/* reel */
+.reel .safe { position: absolute; left: 90px; right: 90px; top: 250px; bottom: 340px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; }
+.journey { width: 820px; padding: 48px 56px; text-align: left; position: relative; }
+.stage { position: relative; display: flex; align-items: center; gap: 34px; height: 116px; }
+.stage .pt { width: 34px; height: 34px; border-radius: 50%; background: #34A853; border: 6px solid #E6F4E4; flex: none; position: relative; z-index: 2; }
+.stage.done .pt { background: #1E7A3A; }
+.stage.next .pt { background: #fff; border: 4px solid #D5DED1; }
+.stage.now .pt { width: 58px; height: 58px; margin: 0 -12px; border: 0; background: linear-gradient(135deg, #34A853, #1E7A3A);
+  box-shadow: 0 0 0 10px rgba(143, 216, 95, .35), 0 0 40px rgba(52, 168, 83, .7); display: flex; align-items: center; justify-content: center; }
+.stage.now .pt svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stage .lbl { font-size: 38px; font-weight: 650; letter-spacing: -0.02em; }
+.stage .lbl small { display: block; font-size: 26px; font-weight: 500; color: #6E6E73; letter-spacing: -0.01em; margin-top: 4px; }
+.stage.next .lbl { color: #8E8E93; }
+.stage.now .lbl { color: #1E7A3A; }
+.rail { position: absolute; left: 69px; width: 8px; border-radius: 4px; }
+.rail.base { top: 106px; bottom: 106px; background: #E3E6E0; }
+.rail.on { top: 106px; height: 360px; background: linear-gradient(180deg, #1E7A3A, #34A853 70%, #8FD85F); box-shadow: 0 0 22px rgba(52, 168, 83, .55); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 30px 0; border-top: 1px solid #EEF1EB; text-align: left; }
+.row:first-child { border-top: 0; }
+.row .ref { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.row .what { font-size: 26px; color: #6E6E73; margin-top: 6px; }
+.chip { display: inline-flex; align-items: center; height: 48px; padding: 0 22px; border-radius: 999px; font-size: 24px; font-weight: 650; background: #E6F4E4; color: #1E7A3A; white-space: nowrap; }
+.chip.dark { background: #1E7A3A; color: #F7FCF2; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="i-ship"><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M12 10v4"/><path d="M12 2v3"/></g>
+    <g id="i-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></g>
+    <g id="i-truck"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></g>
+    <g id="i-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></g>
+    <g id="i-check"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></g>
+    <g id="i-shield"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
+    <g id="i-award"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></g>
+    <g id="i-cash"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></g>
+  </defs>
+</svg>
+
+<!-- ============ SINGLE POST ============ -->
+<section class="frame post light center" id="post-lane" style="padding:0 0 110px;justify-content:center">
+  <div>
+  <div class="eyebrow">Philippines · Indonesia</div>
+  <div class="h" style="font-size:128px;margin-top:64px"><span>Sea. Air. Land.</span><br><span class="grad">One team.</span></div>
+  <p class="sub" style="width:820px;margin-top:40px">Freight forwarding, customs brokerage and trucking <b>between Manila and Jakarta.</b></p>
+  <div style="display:flex;gap:28px;margin-top:64px">
+    <div class="card" style="width:252px;padding:34px 0 30px;display:flex;flex-direction:column;align-items:center;gap:20px"><div class="tile"><svg viewBox="0 0 24 24"><use href="#i-ship"/></svg></div><p style="font-size:28px;font-weight:700;letter-spacing:-0.02em">Sea freight</p></div>
+    <div class="card" style="width:252px;padding:34px 0 30px;display:flex;flex-direction:column;align-items:center;gap:20px"><div class="tile"><svg viewBox="0 0 24 24"><use href="#i-plane"/></svg></div><p style="font-size:28px;font-weight:700;letter-spacing:-0.02em">Air freight</p></div>
+    <div class="card" style="width:252px;padding:34px 0 30px;display:flex;flex-direction:column;align-items:center;gap:20px"><div class="tile"><svg viewBox="0 0 24 24"><use href="#i-truck"/></svg></div><p style="font-size:28px;font-weight:700;letter-spacing:-0.02em">Trucking</p></div>
+  </div>
+  <div class="pill" style="margin-top:64px">Manila <i></i> Jakarta</div>
+  </div>
+  <div class="foot">Philindo Logistics</div>
+</section>
+
+<!-- ============ CAROUSEL ============ -->
+<section class="frame post light car" id="car-1">
+  <div class="top"><div class="eyebrow">Importing to the Philippines</div><img class="mark" src="logo.png" alt=""></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:44px;padding-bottom:90px">
+    <div class="h" style="font-size:138px"><span>Ready before</span><br><span class="grad">it lands.</span></div>
+    <p class="sub" style="font-size:38px;width:820px;color:#6E6E73">Five things to sort out before your shipment arrives in Manila.</p>
+    <div><span class="pill soft">Swipe <span style="font-size:30px;line-height:1">→</span></span></div>
+  </div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:14.3%"></div></div><span class="n">1 / 7</span></div>
+</section>
+
+<section class="frame post light car" id="car-2">
+  <div class="top"><div class="num"><span class="grad">01</span></div><div class="tile big"><svg viewBox="0 0 24 24"><use href="#i-file"/></svg></div></div>
+  <div class="title" style="margin-top:auto;width:860px">The Bill of Lading.</div>
+  <p class="body" style="margin-top:28px;width:860px">The original BL, or a telex release from your shipper. Without it, the shipping line won’t hand over the delivery order.</p>
+  <div class="card tip" style="margin-top:auto;margin-bottom:96px"><span class="dot"></span><p><b>Tip.</b> Ask your shipper to release it as soon as the vessel sails.</p></div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:28.6%"></div></div><span class="n">2 / 7</span></div>
+</section>
+
+<section class="frame post light car" id="car-3">
+  <div class="top"><div class="num"><span class="grad">02</span></div><div class="tile big"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div></div>
+  <div class="title" style="margin-top:auto;width:860px">Invoice and packing list.</div>
+  <p class="body" style="margin-top:28px;width:860px">They must match each other and the BL: the same names, quantities and weights. Mismatches slow customs down.</p>
+  <div class="card tip" style="margin-top:auto;margin-bottom:96px"><span class="dot"></span><p><b>Tip.</b> Send us copies early. We check them before the vessel arrives.</p></div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:42.9%"></div></div><span class="n">3 / 7</span></div>
+</section>
+
+<section class="frame post light car" id="car-4">
+  <div class="top"><div class="num"><span class="grad">03</span></div><div class="tile big"><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg></div></div>
+  <div class="title" style="margin-top:auto;width:860px">Permits and clearances.</div>
+  <p class="body" style="margin-top:28px;width:860px">Some goods need them before release, such as FDA for medicines, food and cosmetics.</p>
+  <div class="card tip" style="margin-top:auto;margin-bottom:96px"><span class="dot"></span><p><b>Tip.</b> Not sure if yours does? Ask us before you place the order.</p></div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:57.1%"></div></div><span class="n">4 / 7</span></div>
+</section>
+
+<section class="frame post light car" id="car-5">
+  <div class="top"><div class="num"><span class="grad">04</span></div><div class="tile big"><svg viewBox="0 0 24 24"><use href="#i-award"/></svg></div></div>
+  <div class="title" style="margin-top:auto;width:860px">Certificate of origin.</div>
+  <p class="body" style="margin-top:28px;width:860px">Goods made in Indonesia can qualify for lower ASEAN duty rates with an ATIGA Form D.</p>
+  <div class="card tip" style="margin-top:auto;margin-bottom:96px"><span class="dot"></span><p><b>Tip.</b> Ask your shipper to apply for it when the goods ship.</p></div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:71.4%"></div></div><span class="n">5 / 7</span></div>
+</section>
+
+<section class="frame post light car" id="car-6">
+  <div class="top"><div class="num"><span class="grad">05</span></div><div class="tile big"><svg viewBox="0 0 24 24"><use href="#i-cash"/></svg></div></div>
+  <div class="title" style="margin-top:auto;width:860px">Funds for duties and charges.</div>
+  <p class="body" style="margin-top:28px;width:860px">Duties, taxes, port and shipping-line charges are paid before release. Late funds mean storage costs.</p>
+  <div class="card tip" style="margin-top:auto;margin-bottom:96px"><span class="dot"></span><p><b>Tip.</b> We send you the estimate before the vessel arrives.</p></div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:85.7%"></div></div><span class="n">6 / 7</span></div>
+</section>
+
+<section class="frame post green car" id="car-7">
+  <div class="top"><div class="eyebrow">Philindo Logistics</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:40px;padding-bottom:90px">
+    <div class="logo-wrap" style="width:200px"><div class="logo-tile"><img src="logo.png" alt=""></div></div>
+    <div class="h" style="font-size:132px;color:#F7FCF2"><span>We’ll take it</span><br><span class="grad-light">from here.</span></div>
+    <p class="sub" style="font-size:36px;width:840px">Customs brokerage, trucking and delivery to your door, from Manila and Jakarta.</p>
+    <div><span class="pill cream">Message us for a quote</span></div>
+  </div>
+  <div class="prog"><span class="brand">Philindo Logistics</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="n">7 / 7</span></div>
+</section>
+
+<!-- ============ REEL FRAMES ============ -->
+<section class="frame reel light" id="reel-1">
+  <div class="safe">
+    <div class="eyebrow">Philindo Logistics</div>
+    <div class="h" style="font-size:160px;margin-top:70px"><span>Where’s my</span><br><span class="grad">shipment?</span></div>
+    <p class="sub" style="font-size:42px;margin-top:56px;color:#6E6E73">Here’s how you’ll always know.</p>
+  </div>
+</section>
+
+<section class="frame reel light" id="reel-2">
+  <div class="safe">
+    <div class="h" style="font-size:104px"><span>Every step,</span><br><span class="grad">as it happens.</span></div>
+    <div class="card float journey" style="margin-top:72px">
+      <div class="rail base"></div><div class="rail on"></div>
+      <div class="stage done"><span class="pt"></span><span class="lbl">Left Jakarta<small>On board the vessel</small></span></div>
+      <div class="stage done"><span class="pt"></span><span class="lbl">On the water<small>Arriving Thursday</small></span></div>
+      <div class="stage done"><span class="pt"></span><span class="lbl">Arrived Manila<small>Unloaded at the port</small></span></div>
+      <div class="stage now"><span class="pt"><svg viewBox="0 0 24 24"><use href="#i-truck"/></svg></span><span class="lbl">Cleared and on the road<small>Out for delivery</small></span></div>
+      <div class="stage next"><span class="pt"></span><span class="lbl">Delivered<small>At your warehouse</small></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="frame reel light" id="reel-3">
+  <div class="safe">
+    <div class="h" style="font-size:118px"><span>One link.</span><br><span class="grad">Every update.</span></div>
+    <div class="card float" style="width:860px;margin-top:72px;padding:20px 48px">
+      <div class="row"><div><div class="ref">PO 2041</div><div class="what">Arrived Manila · 9:12 AM</div></div><span class="chip">Arrived</span></div>
+      <div class="row"><div><div class="ref">PO 2038</div><div class="what">Cleared by customs · Yesterday</div></div><span class="chip">Cleared</span></div>
+      <div class="row"><div><div class="ref">PO 2035</div><div class="what">At your warehouse · Monday</div></div><span class="chip dark">Delivered</span></div>
+    </div>
+    <p class="sub" style="font-size:38px;margin-top:64px;width:820px">From your account handler, <b>by email or Viber.</b></p>
+  </div>
+</section>
+
+<section class="frame reel green" id="reel-4">
+  <div class="safe">
+    <div class="logo-wrap"><div class="logo-tile"><img src="logo.png" alt=""></div></div>
+    <div class="h" style="font-size:168px;margin-top:80px;color:#F7FCF2"><span>Always</span><br><span class="grad-light">delivering.</span></div>
+    <p class="sub" style="font-size:40px;margin-top:48px">Philindo Logistics · Manila · Jakarta</p>
+    <div class="pill cream" style="margin-top:56px">Message us</div>
+  </div>
+</section>
+</body>
+</html>
