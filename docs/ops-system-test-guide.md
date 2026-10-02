@@ -10,6 +10,10 @@ The live Command Center, the CA Tracker and Manifest Control are not touched.*
 Loaded on the test link: the LogiSys Sea and Air registers (1,309 jobs) and the Organization list (729 address-book
 entries).
 
+**2 October — decided: the CA Tracker and Manifest Control stay the record.** The system will write each submission
+into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
+a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
+
 **2 October (morning) — your asks:**
 - **The cash advance pages now show everything on the CA Tracker** (and the manifest pages everything on Manifest
   Control), with no button to press: until the switch-over the system keeps its own copy of both sheets, replaced
