@@ -1,7 +1,7 @@
-# Philindo Operations — how each team works in the system
+# Philindo One — how each team works in the system
 
 *1 October 2026, updated 2 October. The CA Tracker and Manifest Control stay the record: once the system writes
-into them (being built), the team does everything below in Philindo Operations instead of the two apps. Sign in with
+into them (being built), the team does everything below in Philindo One instead of the two apps. Sign in with
 your work email and password.*
 
 **First time?** After you sign in the first time, a short tour shows you around the real pages, step by step. It only

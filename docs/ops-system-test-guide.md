@@ -1,4 +1,4 @@
-# Philindo Operations — test version: set-up and what to try
+# Philindo One — test version: set-up and what to try
 
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
@@ -13,6 +13,10 @@ entries).
 **2 October — decided: the CA Tracker and Manifest Control stay the record.** The system will write each submission
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
+
+**2 October (night) — the system is now called Philindo One.** The sign-in page, the welcome ("Welcome to Philindo
+One"), the tour, the menu (Philindo One, with Philindo Logistics under it), page titles, the invite and sign-in
+emails, printed forms and the name under the icon when it is added to a phone all say Philindo One.
 
 **2 October (night) — Viber update for account handlers.** **Shipments → Viber update** (and a button on each
 handler's dashboard): pick a client and the system writes the status message for their Viber group chat in your
@@ -141,7 +145,7 @@ Control app now live inside the system. How each person uses it: `docs/ops-syste
 - **Monthly report** (Admin, Management): the Command Center's arrivals report from this system's jobs — tables, five
   slides, Viber message and brief. Made by itself at 8:30 AM on the 7th for the month before; any month can be viewed
   live. The dashboard's arrivals chart uses the same counting (an FCL job with no containers = one 40ft).
-- Menu: "Philindo Logistics", the green **New job** button on top, Address book and Clients at the bottom with Admin.
+- Menu: "Philindo Logistics" (since 2 Oct: "Philindo One" with "Philindo Logistics" under it), the green **New job** button on top, Address book and Clients at the bottom with Admin.
   Pages now fade when you click.
 
 **Oliver's asks of 1 October (night):**
