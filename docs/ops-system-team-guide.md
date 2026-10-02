@@ -36,6 +36,15 @@ advances** for everything else ("My cash advances" lists yours).
    status, the page shows the new suggestion and asks — **Keep mine** keeps yours.
    If the client has a tracking link turned on, it is added at the end of the message.
 
+**Ask for a processor (dispatch)**
+1. **Dispatch** (top of My dashboard, or menu: **Shipments → Dispatch**) → **Ask for a processor**.
+2. Choose **Tomorrow** (or Today if it is urgent), type the **job order** (pick it from the list), **what to do** (or tap one:
+   PICK UP DO, LODGE ENTRY, PAY DUTIES AND TAXES…), **where**, and **notes for the processor** (e.g. bring the authorization
+   letter). Tick **Urgent** if it is. Leave the job order empty for an errand without one.
+3. The head dispatcher gives it to a processor. You see each update as it comes in — on the way, arrived, done or a
+   problem — with their remarks, photos and where they were; the **bell** tells you. You can send the processor a
+   remark from the job, change the job until it is done, or cancel it (the processor is told).
+
 **Ask for a cash advance**
 1. **New CA request**.
 2. Type the job order number. If the job is in the system, the client, terms and ETA fill in by themselves.
@@ -58,6 +67,30 @@ advances** for everything else ("My cash advances" lists yours).
 **Use the excess on another job order (offset)**
 On the job order's page, **Offset excess** (or Cash advances → **Offset request**): the other job order, the amount,
 the reason → **Ask to offset**. It counts only once Finance approves it.
+
+## Head dispatcher (role: Head dispatcher) — Jameson
+
+You land on **Dispatch**: every job the account handlers asked the processors to do, by day.
+1. The **bell** tells you when a handler asks for a processor.
+2. On each job, choose the **processor**; set their order with **▲ ▼**. They see it on their phone straight away.
+   You can add jobs yourself with **Ask for a processor**.
+3. **Copy dispatch** gives the day's dispatch, written for you — each processor's jobs in order, with the job order,
+   client, BL, where and the notes. Paste it in the processors' Viber group.
+4. Follow the day: **Progress** shows how far each processor is; every update comes to the bell. A job not finished on
+   its day shows under **Still open from earlier days** — **Move to today** puts it back on today's list.
+5. **My jobs** is there too, if you go out on a job yourself.
+
+## Processors (role: Processor) — EA, Gemmar, Marlon, Elvin
+
+Open Philindo One on your phone (tip: add it to your home screen). You land on **My jobs**: your jobs for today, one at
+a time, in the head dispatcher's order — what to do, the job order, where (tap **Open in Maps**) and the notes.
+1. **On my way** when you leave, **I'm here** when you arrive, **Done** when it is done — or **Problem** if something
+   is wrong (say what it is). Each time you can write **remarks**, add **photos** (the camera opens) and **share where you
+   are**. The account handler and the head dispatcher see it straight away, and everything is kept.
+2. **Add a remark or photo** sends an update without changing the status.
+3. When a job is done, the next one comes up (**Do this now** on another job if you need to change the order). After the
+   last one: a thank-you. **Coming up** shows tomorrow's jobs once they are given to you.
+4. The bell shows new jobs and remarks from the account handlers.
 
 ## Finance (role: Finance)
 

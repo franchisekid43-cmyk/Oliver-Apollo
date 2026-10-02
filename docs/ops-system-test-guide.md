@@ -14,6 +14,15 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (night) — Dispatch for the processors.** Account handlers ask for a processor for tomorrow (or today):
+job order, what to do, where, notes. Jameson (role **Head dispatcher**) gives each job to a processor, sets the order and
+copies the day's dispatch for the processors' Viber group — written for him. EA, Gemmar, Marlon and Elvin (role
+**Processor**) open **My jobs** on their phones: one job at a time — On my way, I'm here, Done or Problem — with remarks,
+photos and where they are; then the next; a thank-you at the end. Every update is kept, and the account handler and
+Jameson are told by the new **bell** (with pop-up alerts if they allow them). When you invite them, give Jameson the role
+**Head dispatcher** and the four the role **Processor**; each needs an email they can open on their phone (the sign-in
+code goes there the first time).
+
 **2 October (night) — the system is now called Philindo One.** The sign-in page, the welcome ("Welcome to Philindo
 One"), the tour, the menu (Philindo One, with Philindo Logistics under it), page titles, the invite and sign-in
 emails, printed forms and the name under the icon when it is added to a phone all say Philindo One.
@@ -344,6 +353,14 @@ email with a link to choose a password; you can also copy the link and send it b
     the others from that supplier follow; type a PO; change a status; untick one; **Copy for Viber** and paste it in a
     chat to yourself. Open the page again: what you typed is still there. Tick a step on one of those jobs, open the page
     again: it shows the new suggestion and **Keep mine**. On your phone, try **Share…**.
+
+17. **Dispatch:** as an account handler, **Dispatch** → **Ask for a processor** → Today → a job order, PICK UP DO, a place and
+    a note. Sign in as Jameson (Head dispatcher) on another browser: the bell shows the request; give the job to a
+    processor, add a second one and move it up with ▲; **Copy dispatch** and paste it to yourself. Sign in as that
+    processor on a phone: **On my way**, then **I'm here** with a photo and a remark, then **Done** — the next job comes up,
+    and after the last one, the thank-you. Back as the handler: the bell has each update; open the job to see the photo
+    and the map link; send a remark — the processor's bell shows it. Try cancelling a job, and asking for another
+    handler's job (it must be refused).
 
 ## 6. Known gaps in this version
 
