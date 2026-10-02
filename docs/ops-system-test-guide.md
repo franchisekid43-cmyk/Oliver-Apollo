@@ -3,12 +3,24 @@
 *1 October 2026 · Parts 1–4 of the build brief, in the look of the new Philindo website, on the test system only.
 The live Command Center, the CA Tracker and Manifest Control are not touched.*
 
-## Status, 1 October (updated late night: Phase 1 final build)
+## Status, 2 October (morning)
 
 **Set up and working:** test link `philindo-command-center-git-ops-system-philindo.vercel.app` (every push to
 `ops-system` updates it), its own Supabase test project `philindo-ops-test` (Singapore), Oliver signed in as Admin.
 Loaded on the test link: the LogiSys Sea and Air registers (1,309 jobs) and the Organization list (729 address-book
 entries).
+
+**2 October (morning) — your asks:**
+- **The cash advance pages now show everything on the CA Tracker** (and the manifest pages everything on Manifest
+  Control), with no button to press: until the switch-over the system keeps its own copy of both sheets, replaced
+  automatically within minutes whenever a sheet changes. The sheets are only read.
+- **Every form opens as a preview** before the switch-over, so you can see exactly what the team will use: New CA
+  request, Liquidate, Offset request, Billing update, and Finance's Decide / Release / Check / offset / deposit windows,
+  plus the manifest Log a shipment form. Each says "Preview" and its send button is off until the switch-over.
+- **CA status by account handler** (Finance → CA status by handler): pick a handler to see every cash advance of
+  theirs, where it stands and what happens next. An account handler sees their own first ("My CA status").
+- **Fixed:** the line under each page title was hidden on every page; it shows again. On phones, the wide fields
+  no longer squeeze the date boxes.
 
 **Phase 1 final build (1 October, late night) — everything in one system.** The CA Tracker app and the Manifest
 Control app now live inside the system. How each person uses it: `docs/ops-system-team-guide.md`.
