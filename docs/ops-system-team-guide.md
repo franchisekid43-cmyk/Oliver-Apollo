@@ -1,11 +1,19 @@
 # Philindo Operations — how each team works in the system
 
-*1 October 2026. From the switch-over (Admin → Switch-over) the CA Tracker app and the Manifest Control app are no
-longer used: everything below is done in Philindo Operations. Sign in with your work email and password.*
+*1 October 2026, updated 2 October. The CA Tracker and Manifest Control stay the record: once the system writes
+into them (being built), the team does everything below in Philindo Operations instead of the two apps. Sign in with
+your work email and password.*
+
+**My dashboard.** Account handlers, the billing team and Finance land on their own dashboard after signing in (menu:
+**My dashboard**). It shows what is waiting for you, with the button to do it. Admin and Management can open each
+team's dashboard from **Team dashboards**.
 
 ## Account handlers (role: Operations) — cash advances
 
-Menu: **Finance → Cash advances**. "My cash advances" lists yours.
+**My dashboard** shows your accounts' open shipments (**Update status** opens the job; **New job** for a new one),
+your cash advances with their liquidation due dates, liquidations, offsets, container deposits, and the billing on
+your accounts — including delivered job orders the billing team has not received yet. Menu: **Finance → Cash
+advances** for everything else ("My cash advances" lists yours).
 
 **Ask for a cash advance**
 1. **New CA request**.
@@ -32,8 +40,9 @@ the reason → **Ask to offset**. It counts only once Finance approves it.
 
 ## Finance (role: Finance)
 
-Menu: **Finance → Cash advances** (you land here after signing in). The **Finance queue** at the top has everything
-waiting for you:
+**My dashboard** (where you land after signing in) has everything waiting for you, then the summaries: liquidation
+status, shortfalls and excess, unliquidated cash by account handler, billing and container deposits. The same
+**Finance queue** is at the top of **Finance → Cash advances**:
 - **Requests to approve** → **Decide**: approve the full amount, or type less to approve part of it, or **Reject**
   (say why).
 - **Approved, to release** → **Release**: the amount (part is fine), date and time, how (Cash, Bank Transfer, Check,
@@ -49,8 +58,10 @@ lines.
 
 ## Billing team (role: Billing & CA)
 
-Menu: **Finance → Billing updates**, or **Finance → Billing** where each unbilled job order has a **Billing update**
-button.
+**My dashboard** shows what is ready to forward to Finance (**Forward to Finance**), what is with you not yet billed
+(**Billing update**), the delivered job orders that have not reached you yet — grouped by account handler, to follow
+up — and what was billed this month. Also: **Finance → Billing updates**, or **Finance → Billing** where each unbilled
+job order has a **Billing update** button.
 1. **New billing update** → type the job order number. The form starts from the last update for that job order
    (consignee, delivery date, documents), so only change what is new.
 2. Tick the documents in hand (DR, original receipts, shipping line, port, warehouse receipts). Any missing →
@@ -77,4 +88,5 @@ Menu: **Shipments → Manifest**.
 
 - Management sees every page and changes nothing.
 - Every change is recorded with who made it and when (Admin → Change log).
-- The CA Tracker and Manifest Control sheets are no longer updated after the switch-over — do not type into them.
+- The CA Tracker and Manifest Control stay the record. Until the system writes into them, keep using their two apps;
+  the system's forms open as a preview.

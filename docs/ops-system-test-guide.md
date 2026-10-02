@@ -14,6 +14,27 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (afternoon) — each team has its own dashboard.** After signing in, account handlers, the billing team and
+Finance each land on **My dashboard**, built for their job. You (Admin) and Pablo still land on the main Dashboard; the
+menu has **Team dashboards**, with buttons on top to see exactly what each team sees (and a list to pick any account
+handler).
+- **Account handler:** their accounts' open shipments (arrived first, oldest first; **Update status** opens the job),
+  **New job**, **New CA request**, **Offset request**, their cash advances (with **Liquidate** and the due date),
+  liquidations, offsets, container deposits, and billing on their accounts (delivered but not yet with billing; with
+  billing, not yet billed; billed this month).
+- **Billing team:** what is **ready to forward to Finance** (every document in hand — the **Forward to Finance** button
+  opens the billing update with that status chosen), what is with them not yet billed, the delivered job orders that
+  have **not reached them yet, grouped by account handler** so they can follow up, and what was billed this month.
+- **Finance:** every CA request, release, liquidation (with how many receipts and files) and offset waiting for them,
+  each with its button; then the summaries: liquidation status, shortfalls and excess, unliquidated cash by account
+  handler with how old it is, billing, container deposits.
+- **Liquidation overdue now counts.** The CA Tracker only learns a job's delivery date when the liquidation is filed,
+  so it never shows a cash advance as overdue before then. The system now takes the delivery date from the shipment
+  when the CA has none: today **39 job orders (about ₱6.6M) are past the 7 days**. Only shown, never written anywhere;
+  the job order's page says "(from the shipment record)".
+- **Each account handler's sign-in must be linked to their name** (Admin → Users & roles → Account handler), or their
+  dashboard can't tell which clients are theirs — it says so.
+
 **2 October (morning) — your asks:**
 - **The cash advance pages now show everything on the CA Tracker** (and the manifest pages everything on Manifest
   Control), with no button to press: until the switch-over the system keeps its own copy of both sheets, replaced
@@ -286,6 +307,11 @@ email with a link to choose a password; you can also copy the link and send it b
     phone in a private window (so you are not signed in): tap the stage boxes to filter, search an FSA or container, open
     a shipment and watch the vehicle glide along its line. Check a few stages against the job pages. Then **New link** and open the old one: it
     must say "This link is not active". **Copy for Viber** now ends with the link.
+
+14. **Team dashboards:** menu → **Team dashboards**. Click *An account handler* and pick a handler, then *The billing
+    team*, then *Finance*. Check a few figures against the CA Tracker and the Billing page (they use the same
+    numbers). On the Finance view, open a job order counted as *Liquidation overdue* and see where its delivery date
+    came from. Try each view on your phone.
 
 ## 6. Known gaps in this version
 
