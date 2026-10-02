@@ -4,6 +4,9 @@
 into them (being built), the team does everything below in Philindo Operations instead of the two apps. Sign in with
 your work email and password.*
 
+**First time?** After you sign in the first time, a short tour shows you around the real pages, step by step. It only
+shows — nothing is typed, saved or sent. Open it again any time from **Help** in the menu.
+
 **My dashboard.** Account handlers, the billing team and Finance land on their own dashboard after signing in (menu:
 **My dashboard**). It shows what is waiting for you, with the button to do it. Admin and Management can open each
 team's dashboard from **Team dashboards**.

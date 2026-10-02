@@ -14,6 +14,15 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (evening) — welcome and a first-time tour.** Everyone gets the big **"Welcome {first name}"** when they
+sign in, and it fades into their own dashboard. The **first time** someone signs in, it also says a short tour is ready,
+and the tour opens: it walks them through the real pages with the rest of the screen dimmed and the part being explained
+lit up, with a card in plain words — **encode a shipment → update its status → ask for a cash advance → liquidate →
+offset → follow the statuses** for account handlers; the billing team, Finance and the manifest team get their own
+steps; you and Pablo get every team's. The tour only shows: the page can't be clicked while it's open, so nothing is
+typed, saved or sent. **Not now** or **×** closes it for good; it is always under **Help** in the menu (last item),
+where the same steps are written out and each part has **Show me**. Everyone, you included, sees it once.
+
 **2 October (afternoon) — each team has its own dashboard.** After signing in, account handlers, the billing team and
 Finance each land on **My dashboard**, built for their job. You (Admin) and Pablo still land on the main Dashboard; the
 menu has **Team dashboards**, with buttons on top to see exactly what each team sees (and a list to pick any account
@@ -312,6 +321,10 @@ email with a link to choose a password; you can also copy the link and send it b
     team*, then *Finance*. Check a few figures against the CA Tracker and the Billing page (they use the same
     numbers). On the Finance view, open a job order counted as *Liquidation overdue* and see where its delivery date
     came from. Try each view on your phone.
+
+15. **Tour:** sign out and back in — the welcome, then the tour (it opens once per person). Click through it, try
+    **Back**, close it with **×**, then open **Help** in the menu and use **Show me** on one part. On a phone the card
+    sits at the bottom of the screen.
 
 ## 6. Known gaps in this version
 
