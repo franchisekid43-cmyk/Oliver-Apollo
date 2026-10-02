@@ -14,6 +14,12 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (night) — password links say what happened.** A password link (invitation or new password) now says
+straight away, before anything is typed, if it can't be used: **already used** — the password is set, so sign in;
+**expired** — **Get a new link** sends a fresh one by email; **replaced** — a newer email was sent, so use that one. The
+invitation email also says where to sign in afterwards, because the link works only once. In **Admin → Users & roles**
+the Status column shows "Invited, no password yet" or "Invited, link expired" for anyone who hasn't chosen a password.
+
 **2 October (night) — every request collated for Jameson, and a tidier menu.** Every request for the processors comes
 to Jameson and goes into one dispatch per day; the board says when it is ready to post, when he posted it, and what came
 in or was cancelled since — **Copy only what's new** gives a short update. The menu: **Help** and **Notifications** are now
@@ -299,7 +305,9 @@ in December you set it to LogiSys's last number, so new JOs carry straight on.
 ## 4. Invite the testers
 
 **Users** (Admin menu) → **Invite**: name, work email, role, and for account handlers their handler name. They get an
-email with a link to choose a password; you can also copy the link and send it by Viber.
+email with a link to choose a password; you can also copy the link and send it by Viber. The link works once (3 days
+for an invitation, 1 hour for a new password). Sending a new link cancels the older one, so tell them to use the newest
+email. After choosing the password they sign in at the sign-in page, not from the email.
 
 | Role | For |
 |---|---|

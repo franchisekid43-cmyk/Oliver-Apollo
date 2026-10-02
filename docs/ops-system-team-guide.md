@@ -4,7 +4,12 @@
 into them (being built), the team does everything below in Philindo One instead of the two apps. Sign in with
 your work email and password.*
 
-**First time?** After you sign in the first time, a short tour shows you around the real pages, step by step. It only
+**First time?** Open the invitation email and click **Choose my password** — that link works once, for 3 days. After
+that, always sign in at the sign-in page with your email address and password (don't click the email again: it will
+say your password is already set). If the link has expired, click **Get a new link** and type your email — a new one
+comes straight away.
+
+After you sign in the first time, a short tour shows you around the real pages, step by step. It only
 shows — nothing is typed, saved or sent. Open it again any time from **Admin → Help** in the menu.
 
 **My dashboard.** Account handlers, the billing team and Finance land on their own dashboard after signing in (menu:
