@@ -11,12 +11,30 @@ shows — nothing is typed, saved or sent. Open it again any time from **Help** 
 **My dashboard**). It shows what is waiting for you, with the button to do it. Admin and Management can open each
 team's dashboard from **Team dashboards**.
 
-## Account handlers (role: Operations) — cash advances
+## Account handlers (role: Operations) — Viber updates and cash advances
 
 **My dashboard** shows your accounts' open shipments (**Update status** opens the job; **New job** for a new one),
 your cash advances with their liquidation due dates, liquidations, offsets, container deposits, and the billing on
 your accounts — including delivered job orders the billing team has not received yet. Menu: **Finance → Cash
 advances** for everything else ("My cash advances" lists yours).
+
+**Send your client's shipment update on Viber**
+1. **Viber update** (top of My dashboard, or menu: **Shipments → Viber update**), then choose the client. You see your
+   own clients only.
+2. Every open shipment is listed, plus those delivered in the last 7 days, already in our usual message format:
+   `-NAME PORT BL PO`, Supplier, ETA, and the status in bold.
+3. Check each one:
+   - **Name on the update** — the brand the client knows it by (e.g. MILKLAB, BBS PREMIUM). Type it once; the other
+     shipments from the same supplier follow, and new ones remember it.
+   - **PO no. (from the invoice)** — type the number (e.g. 3497 becomes PO3497) or the invoice number as it is
+     (e.g. PI95/2608000664). Leave it empty to use the BL only.
+   - **Status** — the system suggests one from the steps ticked on the job (e.g. *WAITING ARRIVAL*, *DELIVERED
+     SEPTEMBER 26*). Type your own if needed (e.g. *IED DEBITED*); **Use this** puts the suggestion back.
+4. Untick any shipment you don't want in today's message.
+5. **Copy for Viber**, then paste it in the client's Viber group chat (on a phone, **Share…** opens Viber directly).
+   The names, PO numbers and statuses you typed are kept for next time. If a step is done on the job after you typed a
+   status, the page shows the new suggestion and asks — **Keep mine** keeps yours.
+   If the client has a tracking link turned on, it is added at the end of the message.
 
 **Ask for a cash advance**
 1. **New CA request**.

@@ -14,10 +14,19 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (night) — Viber update for account handlers.** **Shipments → Viber update** (and a button on each
+handler's dashboard): pick a client and the system writes the status message for their Viber group chat in your
+template — `-NAME PORT BL PO`, Supplier, ETA, and the status in bold, ending "Thank you / OPS". The handler checks three
+things per shipment: the **name** the client knows it by (MILKLAB, BBS PREMIUM — typed once, then remembered for that
+supplier), the **PO number from the invoice** (or the invoice number), and the **status** (suggested from the steps
+ticked on the job, or their own words like *IED DEBITED*). **Copy for Viber** copies it to paste in the group chat; what
+they typed is kept for next time. Handlers see only their own clients. The client report's **Copy for Viber** now uses
+the same format. The tour has a new chapter for it, right after updating a shipment's status.
+
 **2 October (evening) — welcome and a first-time tour.** Everyone gets the big **"Welcome {first name}"** when they
 sign in, and it fades into their own dashboard. The **first time** someone signs in, it also says a short tour is ready,
 and the tour opens: it walks them through the real pages with the rest of the screen dimmed and the part being explained
-lit up, with a card in plain words — **encode a shipment → update its status → ask for a cash advance → liquidate →
+lit up, with a card in plain words — **encode a shipment → update its status → Viber update → ask for a cash advance → liquidate →
 offset → follow the statuses** for account handlers; the billing team, Finance and the manifest team get their own
 steps; you and Pablo get every team's. The tour only shows: the page can't be clicked while it's open, so nothing is
 typed, saved or sent. **Not now** or **×** closes it for good; it is always under **Help** in the menu (last item),
@@ -325,6 +334,12 @@ email with a link to choose a password; you can also copy the link and send it b
 15. **Tour:** sign out and back in — the welcome, then the tour (it opens once per person). Click through it, try
     **Back**, close it with **×**, then open **Help** in the menu and use **Show me** on one part. On a phone the card
     sits at the bottom of the screen.
+
+16. **Viber update:** sign in as an account handler (or as you: you see every client) → **Viber update** → pick a
+    client. Compare the message with what you sent the client last; type a name (e.g. MILKLAB) on one shipment and see
+    the others from that supplier follow; type a PO; change a status; untick one; **Copy for Viber** and paste it in a
+    chat to yourself. Open the page again: what you typed is still there. Tick a step on one of those jobs, open the page
+    again: it shows the new suggestion and **Keep mine**. On your phone, try **Share…**.
 
 ## 6. Known gaps in this version
 
