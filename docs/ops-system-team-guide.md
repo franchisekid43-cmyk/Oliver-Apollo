@@ -5,11 +5,14 @@ into them (being built), the team does everything below in Philindo One instead 
 your work email and password.*
 
 **First time?** After you sign in the first time, a short tour shows you around the real pages, step by step. It only
-shows — nothing is typed, saved or sent. Open it again any time from **Help** in the menu.
+shows — nothing is typed, saved or sent. Open it again any time from **Admin → Help** in the menu.
 
 **My dashboard.** Account handlers, the billing team and Finance land on their own dashboard after signing in (menu:
 **My dashboard**). It shows what is waiting for you, with the button to do it. Admin and Management can open each
-team's dashboard from **Team dashboards**.
+team's dashboard from **Dashboard → Team dashboards**.
+
+**Notifications** and **Help** are the last items under **Admin** in the menu; the number beside Admin shows there is
+something new. On a phone, the bell at the top of the screen opens the notifications too.
 
 ## Account handlers (role: Operations) — Viber updates and cash advances
 
@@ -42,7 +45,7 @@ advances** for everything else ("My cash advances" lists yours).
    PICK UP DO, LODGE ENTRY, PAY DUTIES AND TAXES…), **where**, and **notes for the processor** (e.g. bring the authorization
    letter). Tick **Urgent** if it is. Leave the job order empty for an errand without one.
 3. The head dispatcher gives it to a processor. You see each update as it comes in — on the way, arrived, done or a
-   problem — with their remarks, photos and where they were; the **bell** tells you. You can send the processor a
+   problem — with their remarks, photos and where they were; **Notifications** tell you. You can send the processor a
    remark from the job, change the job until it is done, or cancel it (the processor is told).
 
 **Ask for a cash advance**
@@ -71,12 +74,16 @@ the reason → **Ask to offset**. It counts only once Finance approves it.
 ## Head dispatcher (role: Head dispatcher) — Jameson
 
 You land on **Dispatch**: every job the account handlers asked the processors to do, by day.
-1. The **bell** tells you when a handler asks for a processor.
+1. Every request comes to you: **Notifications** tell you when a handler asks for a processor, and all the requests for
+   a day are collated into one dispatch on the board (the day tabs show how many are **not posted** or **new**).
 2. On each job, choose the **processor**; set their order with **▲ ▼**. They see it on their phone straight away.
    You can add jobs yourself with **Ask for a processor**.
 3. **Copy dispatch** gives the day's dispatch, written for you — each processor's jobs in order, with the job order,
-   client, BL, where and the notes. Paste it in the processors' Viber group.
-4. Follow the day: **Progress** shows how far each processor is; every update comes to the bell. A job not finished on
+   client, BL, where and the notes. Paste it in the processors' Viber group. The board says whether every job is given
+   out (**ready to post**) and when you posted it.
+   Requests that come in after you post are marked **New since posted**: **Copy only what's new** gives just those — and
+   any cancelled — as a short **DISPATCH UPDATE**, keeping each processor's numbering. **Copy all again** gives the whole day.
+4. Follow the day: **Progress** shows how far each processor is; every update comes to Notifications. A job not finished on
    its day shows under **Still open from earlier days** — **Move to today** puts it back on today's list.
 5. **My jobs** is there too, if you go out on a job yourself.
 
@@ -90,7 +97,7 @@ a time, in the head dispatcher's order — what to do, the job order, where (tap
 2. **Add a remark or photo** sends an update without changing the status.
 3. When a job is done, the next one comes up (**Do this now** on another job if you need to change the order). After the
    last one: a thank-you. **Coming up** shows tomorrow's jobs once they are given to you.
-4. The bell shows new jobs and remarks from the account handlers.
+4. The bell at the top of your phone shows new jobs and remarks from the account handlers.
 
 ## Finance (role: Finance)
 

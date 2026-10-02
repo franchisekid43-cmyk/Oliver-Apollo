@@ -14,12 +14,18 @@ entries).
 into them, the way their apps do now. **Don't press Switch-over.** Waiting on you: the CA Tracker's Code.gs pasted into
 a Google Doc, and test copies of both sheets shared with the system's Google account as Editor.
 
+**2 October (night) — every request collated for Jameson, and a tidier menu.** Every request for the processors comes
+to Jameson and goes into one dispatch per day; the board says when it is ready to post, when he posted it, and what came
+in or was cancelled since — **Copy only what's new** gives a short update. The menu: **Help** and **Notifications** are now
+the last items under **Admin** (the number beside Admin shows new notifications); for you and Pablo, **Team dashboards**
+is under **Dashboard** (with **Main dashboard**).
+
 **2 October (night) — Dispatch for the processors.** Account handlers ask for a processor for tomorrow (or today):
 job order, what to do, where, notes. Jameson (role **Head dispatcher**) gives each job to a processor, sets the order and
 copies the day's dispatch for the processors' Viber group — written for him. EA, Gemmar, Marlon and Elvin (role
 **Processor**) open **My jobs** on their phones: one job at a time — On my way, I'm here, Done or Problem — with remarks,
 photos and where they are; then the next; a thank-you at the end. Every update is kept, and the account handler and
-Jameson are told by the new **bell** (with pop-up alerts if they allow them). When you invite them, give Jameson the role
+Jameson are told through **Notifications** (with pop-up alerts if they allow them). When you invite them, give Jameson the role
 **Head dispatcher** and the four the role **Processor**; each needs an email they can open on their phone (the sign-in
 code goes there the first time).
 
@@ -42,12 +48,12 @@ and the tour opens: it walks them through the real pages with the rest of the sc
 lit up, with a card in plain words — **encode a shipment → update its status → Viber update → ask for a cash advance → liquidate →
 offset → follow the statuses** for account handlers; the billing team, Finance and the manifest team get their own
 steps; you and Pablo get every team's. The tour only shows: the page can't be clicked while it's open, so nothing is
-typed, saved or sent. **Not now** or **×** closes it for good; it is always under **Help** in the menu (last item),
+typed, saved or sent. **Not now** or **×** closes it for good; it is always under **Admin → Help** in the menu,
 where the same steps are written out and each part has **Show me**. Everyone, you included, sees it once.
 
 **2 October (afternoon) — each team has its own dashboard.** After signing in, account handlers, the billing team and
 Finance each land on **My dashboard**, built for their job. You (Admin) and Pablo still land on the main Dashboard; the
-menu has **Team dashboards**, with buttons on top to see exactly what each team sees (and a list to pick any account
+menu has **Dashboard → Team dashboards**, with buttons on top to see exactly what each team sees (and a list to pick any account
 handler).
 - **Account handler:** their accounts' open shipments (arrived first, oldest first; **Update status** opens the job),
   **New job**, **New CA request**, **Offset request**, their cash advances (with **Liquidate** and the due date),
@@ -339,13 +345,13 @@ email with a link to choose a password; you can also copy the link and send it b
     a shipment and watch the vehicle glide along its line. Check a few stages against the job pages. Then **New link** and open the old one: it
     must say "This link is not active". **Copy for Viber** now ends with the link.
 
-14. **Team dashboards:** menu → **Team dashboards**. Click *An account handler* and pick a handler, then *The billing
+14. **Team dashboards:** menu → **Dashboard → Team dashboards**. Click *An account handler* and pick a handler, then *The billing
     team*, then *Finance*. Check a few figures against the CA Tracker and the Billing page (they use the same
     numbers). On the Finance view, open a job order counted as *Liquidation overdue* and see where its delivery date
     came from. Try each view on your phone.
 
 15. **Tour:** sign out and back in — the welcome, then the tour (it opens once per person). Click through it, try
-    **Back**, close it with **×**, then open **Help** in the menu and use **Show me** on one part. On a phone the card
+    **Back**, close it with **×**, then open **Admin → Help** and use **Show me** on one part. On a phone the card
     sits at the bottom of the screen.
 
 16. **Viber update:** sign in as an account handler (or as you: you see every client) → **Viber update** → pick a
@@ -355,11 +361,13 @@ email with a link to choose a password; you can also copy the link and send it b
     again: it shows the new suggestion and **Keep mine**. On your phone, try **Share…**.
 
 17. **Dispatch:** as an account handler, **Dispatch** → **Ask for a processor** → Today → a job order, PICK UP DO, a place and
-    a note. Sign in as Jameson (Head dispatcher) on another browser: the bell shows the request; give the job to a
-    processor, add a second one and move it up with ▲; **Copy dispatch** and paste it to yourself. Sign in as that
+    a note. Sign in as Jameson (Head dispatcher) on another browser: **Admin → Notifications** shows the request; give the
+    job to a processor, add a second one and move it up with ▲; **Copy dispatch** and paste it to yourself. Then, as the
+    handler, ask for one more job for the same day and cancel one: Jameson's board shows *Since then: 1 new, 1 cancelled*
+    and the new job is marked **New since posted**; **Copy only what's new** gives a short DISPATCH UPDATE. Sign in as that
     processor on a phone: **On my way**, then **I'm here** with a photo and a remark, then **Done** — the next job comes up,
-    and after the last one, the thank-you. Back as the handler: the bell has each update; open the job to see the photo
-    and the map link; send a remark — the processor's bell shows it. Try cancelling a job, and asking for another
+    and after the last one, the thank-you. Back as the handler: Notifications have each update; open the job to see the photo
+    and the map link; send a remark — the processor's phone shows it. Try cancelling a job, and asking for another
     handler's job (it must be refused).
 
 ## 6. Known gaps in this version
