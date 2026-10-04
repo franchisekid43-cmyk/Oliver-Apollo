@@ -1,6 +1,7 @@
-# Philindo One promo v2: voice-over + music + sound effects, one 48 kHz stereo track for the 61.4 s video.
-# Voice: 14 lines (vo0..vo13.wav), each trimmed to its last word and placed on its scene.
-# Music: Mixkit "Better Times are Coming" (Mixkit free licence), dipped under the voice.
+# Philindo One promo v2: music + sound effects (+ an optional voice-over), one 48 kHz stereo track for the 61.4 s video.
+# Voice: off by default (Oliver, 4 Oct 2026: no voice-over). VOICE=on adds the 14 lines (vo0..vo13.wav), each trimmed
+# to its last word and placed on its scene.
+# Music: Mixkit "Better Times are Coming" (Mixkit free licence), dipped under the voice when there is one.
 # Sound effects: made here from scratch (no samples), timed to the animation.
 import json, os, subprocess, sys
 import numpy as np
@@ -9,6 +10,7 @@ FF = os.environ.get('FF') or __import__('imageio_ffmpeg').get_ffmpeg_exe()
 SR, T = 48000, 61.4
 N = int(SR * T)
 rng = np.random.default_rng(7)
+VOICE = os.environ.get('VOICE', 'off') == 'on'
 
 def load(path, *af):
     cmd = [FF, '-nostdin', '-v', 'error', '-i', path]
@@ -29,7 +31,7 @@ def db(v): return 10 ** (v / 20)
 END = [1.68, 1.78, 3.66, 2.12, 2.2, 5.86, 3.44, 3.18, 5.2, 4.76, 3.54, 3.26, 1.96, 2.9]
 AT = [1.6, 5.5, 8.5, 12.4, 18.1, 21.7, 28.0, 31.9, 35.4, 40.85, 46.0, 50.1, 53.7, 57.3]
 vo = np.zeros((N, 2), np.float32)
-for i, (end, at) in enumerate(zip(END, AT)):
+for i, (end, at) in enumerate(zip(END, AT) if VOICE else []):
     L = end + 0.13
     x = load(f'vo{i}.wav', 'silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.02',
              f'atrim=0:{L:.3f}', f'afade=t=out:st={L - 0.12:.3f}:d=0.12', 'afade=t=in:d=0.01')
@@ -37,8 +39,8 @@ for i, (end, at) in enumerate(zip(END, AT)):
     place(vo, x, at, db(-19) / max(rms, 1e-4))          # every line at the same loudness
     print(f'vo{i}: {at:5.2f}-{at + len(x) / SR:5.2f}s')
 
-# ---------- music, dipped under the voice ----------
-m = load('music173.mp3', f'atrim=0:{T}', 'equalizer=f=3000:t=q:w=1.5:g=-6',   # a dip where the voice's consonants sit
+# ---------- music, dipped under the voice (stays level when there is none) ----------
+m = load('music173.mp3', f'atrim=0:{T}', *(['equalizer=f=3000:t=q:w=1.5:g=-6'] if VOICE else []),   # a dip where the voice's consonants sit
          'afade=t=in:d=0.4', f'afade=t=out:st={T - 2.6}:d=2.6')
 m = np.pad(m, ((0, max(0, N - len(m))), (0, 0)))[:N]
 m *= db(-22) / np.sqrt(np.mean(m ** 2))
