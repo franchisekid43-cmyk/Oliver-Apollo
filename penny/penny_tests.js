@@ -707,6 +707,15 @@ test('Philindo One — Penny reads the jobs from the Penny feed', () => {
   setNow(2026, 9, 28);
 });
 
+test('Philindo One — first-name handlers ("Jimmy") are matched', () => {
+  const rows = [Object.assign(ship({ 'JO Number': 'P1-JIM', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued', 'Account Handler': 'Jimmy' }))];
+  world({ source: 'philindo-one', live: [], p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' } });
+  W.run('runPenny()');
+  check('"Jimmy" routes to Jimmy Rapera', to('jimmyrapera@philindo.com.ph').some(m => /P1-JIM/.test(m.htmlBody)));
+  check('a first name shared by two handlers is not guessed',
+    W.run('CONFIG.HANDLERS.push("Jimmy Cruz"); resolveHandler_("Jimmy")') === '');
+});
+
 test('Philindo One unreachable — Penny uses the sheet and says so', () => {
   const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
   world({ source: 'philindo-one', live, p1: { status: 401 }, propValues: { PENNY_FEED_TOKEN: 'WRONG' } });

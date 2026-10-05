@@ -409,6 +409,11 @@ function resolveHandler_(name) {
     if (hw.join(' ') === n) return h;
     if (words.indexOf(hw[0]) !== -1 && words.indexOf(hw[hw.length - 1]) !== -1) return h;
   }
+  // A first name alone ("Jimmy", as Philindo One writes some handlers), if only one handler has it.
+  if (words.length === 1) {
+    const hits = CONFIG.HANDLERS.filter(function (h) { return h.toLowerCase().split(' ')[0] === n; });
+    if (hits.length === 1) return hits[0];
+  }
   return '';
 }
 
