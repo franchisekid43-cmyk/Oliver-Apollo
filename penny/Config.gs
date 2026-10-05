@@ -70,6 +70,18 @@ const CONFIG = {
   // Flip to true once Ariel updates LogiSys directly. Nothing else changes.
   TRUST_LOGISYS_ATA: false,
 
+  // ---- Where the shipments come from — ONE switch ------------------------
+  //   'philindo-one' -> Philindo One's read-only Penny feed (/api/ops/penny-feed):
+  //                     the jobs as the team keeps them there, handlers from the
+  //                     client's assigned handler, and every ETA change.
+  //   'sheet'        -> the LogiSys Live / LogiSys Archive sheets (the importer's).
+  // If Philindo One can't be read, Penny uses the sheet that morning and says so
+  // in the COO's email — she never skips a day because of it.
+  // The token is NOT kept here: Project Settings -> Script Properties ->
+  // PENNY_FEED_TOKEN, the same value as PENNY_FEED_TOKEN in Vercel.
+  FEED_SOURCE: 'philindo-one',
+  PHILINDO_ONE_URL: 'https://philindo-command-center-git-ops-system-philindo.vercel.app',
+
   // ---- Spreadsheets ---------------------------------------------------
   // The workbook holding LogiSys Live + LogiSys Archive (written by importer).
   // Leave blank to use the spreadsheet this script is bound to.

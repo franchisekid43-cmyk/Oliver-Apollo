@@ -115,6 +115,8 @@ function world(opts) {
   const mail = [];
   const logs = [];
   const triggers = [];
+  const fetches = [];
+  const props = opts.props || fakeProps(opts.propValues);
   const ctx = {
     Date: FakeDate, Math, JSON, Object, Array, String, Number, RegExp, Error, TypeError, isNaN,
     console,
@@ -140,6 +142,8 @@ function world(opts) {
       }
     },
     Utilities: { formatDate: fmt },
+    PropertiesService: { getScriptProperties: () => props },
+    UrlFetchApp: { fetch: (url, o) => { fetches.push({ url, o }); return p1Response(opts.p1, o); } },
     Session: { getEffectiveUser: () => ({ getEmail: () => opts.user || 'ops.philindo@gmail.com' }),
                getScriptTimeZone: () => opts.tz || 'Asia/Manila' }
   };
@@ -149,11 +153,30 @@ function world(opts) {
   vm.runInContext('CONFIG.SHADOW_TO = ' + JSON.stringify(opts.shadow || ''), ctx);   // tests check real routing
   vm.runInContext('CONFIG.TEAM_EMAILS = ' + (opts.team === false ? 'false' : 'true'), ctx);
   vm.runInContext('CONFIG.ARIEL_REMINDER = ' + (opts.arielAt10 ? 'true' : 'false'), ctx);
+  vm.runInContext('CONFIG.FEED_SOURCE = ' + JSON.stringify(opts.source || 'sheet'), ctx);
   if (opts.config) opts.config(vm.runInContext('CONFIG', ctx));
-  W = { ctx, feed, ca, mail, logs, triggers,
+  W = { ctx, feed, ca, mail, logs, triggers, fetches, props,
         run: fn => vm.runInContext(fn, ctx),
         CONFIG: vm.runInContext('CONFIG', ctx) };
   return W;
+}
+
+/** In-memory Script Properties. */
+function fakeProps(init) {
+  const m = Object.assign({}, init || {});
+  return { getProperty: k => (k in m ? m[k] : null), setProperty: (k, v) => { m[k] = String(v); },
+           deleteProperty: k => { delete m[k]; }, getKeys: () => Object.keys(m), _m: m };
+}
+/** Philindo One's /api/ops/penny-feed. p1 = { rows: [objects], etaHistory, status, token }. */
+function p1Response(p1, o) {
+  p1 = p1 || { status: 503 };
+  const want = 'Bearer ' + (p1.token || 'TOKEN');
+  const status = p1.status || (o.headers.Authorization === want ? 200 : 401);
+  const iso = v => v instanceof RealDate ? fmt(v, '', 'yyyy-MM-dd') : (v === undefined ? '' : v);
+  const body = status !== 200 ? 'no' : JSON.stringify({
+    reportDate: fmt(new FakeDate(), '', 'yyyy-MM-dd'), headers: LIVE_HEADERS,
+    rows: (p1.rows || []).map(r => LIVE_HEADERS.map(h => iso(r[h]))), etaHistory: p1.etaHistory || [] });
+  return { getResponseCode: () => status, getContentText: () => body };
 }
 
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -641,6 +664,75 @@ test('Email renders on a phone', () => {
   const h = W.mail.map(m => m.htmlBody).join('');
   check('HTML only — no images or external stylesheets', !/<img|<link|@import|url\(/i.test(h));
   check('handler line names JO, client, days and both clocks', /PH-1/.test(h) && /ACME TRADING/.test(h) && /5d/.test(h) && /demurrage/i.test(h));
+});
+
+test('Philindo One — Penny reads the jobs from the Penny feed', () => {
+  // Philindo One's rows are text dates ('2026-09-23'), handlers from the client, no archive.
+  const p1row = o => Object.assign(ship({}), { 'Source Report Date': daysAgo(0) }, o);
+  const rows = [
+    p1row({ 'JO Number': 'P1-ARR', 'ETA': daysAgo(6), 'ATA': daysAgo(5), 'Status': 'DO Issued', 'Stage': 'Released' }),
+    p1row({ 'JO Number': 'P1-DONE', 'ETA': daysAgo(9), 'ATA': daysAgo(8), 'Status': 'Gatepass Released', 'Stage': 'Delivered', 'Delivered': daysAgo(2) }),
+    p1row({ 'JO Number': 'P1-CLOSED', 'ETA': daysAgo(9), 'ATA': daysAgo(8), 'Status': 'Gatepass Released', 'Stage': 'Closing' }),
+    p1row({ 'JO Number': 'P1-MOVED', 'ETA': daysAhead(10) }),
+    p1row({ 'JO Number': 'P1-STALE', 'ETA': daysAhead(20), 'Last Updated': daysAgo(9) })
+  ];
+  const hist = [{ jo: 'P1-MOVED', at: daysAgo(0).toISOString(), old: fmt(daysAhead(3), '', 'yyyy-MM-dd'), new: fmt(daysAhead(10), '', 'yyyy-MM-dd') }];
+  world({ source: 'philindo-one', live: [], p1: { rows, etaHistory: hist }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' } });
+  W.run('runPenny()');
+  const f = W.fetches[0];
+  check('calls /api/ops/penny-feed with the bearer token from Script Properties',
+    f && /\/api\/ops\/penny-feed$/.test(f.url) && f.o.headers.Authorization === 'Bearer TOKEN', f && f.url);
+  const coo = to(COO)[0], h = coo ? coo.htmlBody : '';
+  check('arrived job from Philindo One is in queue 1', /P1-ARR/.test(h));
+  check('Delivered date or Closing stage = delivered, never listed', !/P1-DONE|P1-CLOSED/.test(h));
+  check('ETA moved 7 days later (from the ETA change log) is red 5b', /P1-MOVED/.test(h) && /7 days later/.test(h), h.slice(0, 0));
+  check('stale status read from Last Updated', /P1-STALE/.test(h) && /no status update/.test(h));
+  check('first morning: no "No earlier report in LogiSys Archive" note, new JOs from tomorrow',
+    !/LogiSys Archive/.test(h) && /new job orders are listed from tomorrow/.test(h));
+  check('the email says the data is from Philindo One', /Data from Philindo One/.test(h));
+  check('the run is remembered for tomorrow', !!W.props.getProperty('penny:lastRun') && /P1-ARR/.test(W.props.getProperty('penny:seenJos.0')));
+  check('Penny Arrivals built from Philindo One', !!W.feed.getSheetByName('Penny Arrivals'));
+  check('Penny never writes to LogiSys Live or Archive', W.feed.getSheetByName('LogiSys Live').writes === 0);
+
+  // The next morning: one new JO; an ETA change from before the last run is not "moved" again.
+  const props = W.props;
+  setNow(2026, 9, 29);
+  const rows2 = rows.concat([p1row({ 'JO Number': 'P1-NEW', 'ETA': daysAhead(15), 'Goods Description': 'RESIN' })]);
+  world({ source: 'philindo-one', live: [], p1: { rows: rows2, etaHistory: hist }, props });
+  props.setProperty('PENNY_FEED_TOKEN', 'TOKEN');
+  W.run('runPenny()');
+  const h2 = to(COO)[0] ? to(COO)[0].htmlBody : '';
+  check('next morning lists the new job order', /New job orders encoded/.test(h2) && /P1-NEW/.test(h2) && !/>P1-ARR<\/b><\/td><td[^>]*>ACME TRADING<\/td><td[^>]*>RESIN/.test(h2));
+  check('yesterday\'s ETA change is not reported again', !/7 days later/.test(h2));
+  setNow(2026, 9, 28);
+});
+
+test('Philindo One unreachable — Penny uses the sheet and says so', () => {
+  const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
+  world({ source: 'philindo-one', live, p1: { status: 401 }, propValues: { PENNY_FEED_TOKEN: 'WRONG' } });
+  W.run('runPenny()');
+  let h = to(COO)[0] ? to(COO)[0].htmlBody : '';
+  check('wrong token: falls back to LogiSys Live, shipment still reported', /SH-1/.test(h));
+  check('the COO is told why', /Philindo One could not be read \(HTTP 401, the token does not match/.test(h), h.match(/Philindo One could not[^<]*/));
+  check('a fallback morning is not remembered as a Philindo One run', !W.props.getProperty('penny:lastRun'));
+  world({ source: 'philindo-one', live, p1: { rows: [] } });
+  W.run('runPenny()');
+  h = to(COO)[0] ? to(COO)[0].htmlBody : '';
+  check('no token in Script Properties: says so, never calls out', W.fetches.length === 0 && /PENNY_FEED_TOKEN is not set in Script Properties/.test(h));
+  world({ source: 'philindo-one', live, p1: { rows: [] }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' } });
+  W.run('runPenny()');
+  h = to(COO)[0] ? to(COO)[0].htmlBody : '';
+  check('an empty feed is not trusted', /the feed has no jobs/.test(h) && /SH-1/.test(h));
+});
+
+test('Philindo One — Ariel\'s 10:00 list comes from it too', () => {
+  const rows = [Object.assign(ship({ 'JO Number': 'P1-AR', 'ETA': daysAhead(20), 'Last Updated': daysAgo(10) }))];
+  world({ source: 'philindo-one', live: [], p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false, arielAt10: true });
+  setNow(2026, 9, 28, 10, 0);
+  W.run('runArielReminder()');
+  check('Ariel gets the stale job from Philindo One', to(ARIEL).length === 1 && /P1-AR/.test(to(ARIEL)[0].htmlBody));
+  check('the 10:00 run does not move the "since last run" mark', !W.props.getProperty('penny:lastRun'));
+  setNow(2026, 9, 28);
 });
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

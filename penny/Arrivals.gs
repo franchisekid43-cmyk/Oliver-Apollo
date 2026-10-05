@@ -4,8 +4,11 @@
  *  Philindo web app. The Command Center READS these sheets.
  */
 
-/** Every shipment ever seen, from the archive, deduplicated latest-wins. */
-function allShipmentsYtd_(ss, year) {
+/**
+ * Every shipment ever seen, from the archive, deduplicated latest-wins.
+ * With `rows` (Philindo One's jobs), those are the whole record instead.
+ */
+function allShipmentsYtd_(ss, year, rows) {
   const seen = {};
   function take(rows) {
     rows.forEach(function (r) {
@@ -18,8 +21,11 @@ function allShipmentsYtd_(ss, year) {
       }
     });
   }
-  if (ss.getSheetByName(CONFIG.SHEET_ARCHIVE)) take(readTab_(ss, CONFIG.SHEET_ARCHIVE, 1).rows);
-  take(readTab_(ss, CONFIG.SHEET_LIVE, 1).rows);            // live wins
+  if (rows) take(rows);
+  else {
+    if (ss.getSheetByName(CONFIG.SHEET_ARCHIVE)) take(readTab_(ss, CONFIG.SHEET_ARCHIVE, 1).rows);
+    take(readTab_(ss, CONFIG.SHEET_LIVE, 1).rows);          // live wins
+  }
 
   const out = [];
   Object.keys(seen).forEach(function (jo) {

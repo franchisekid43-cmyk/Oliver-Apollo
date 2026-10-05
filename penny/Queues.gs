@@ -1,10 +1,57 @@
 /** ============ Load the feed and build the five queues ============ */
 
+/**
+ * This morning's shipments. From Philindo One when FEED_SOURCE says so; from
+ * LogiSys Live otherwise, or when Philindo One can't be read — then
+ * `fallback` says why, and the COO's email carries it.
+ */
 function loadFeed_() {
   const ss = feedBook_();
+  var fallback = '';
+  if (CONFIG.FEED_SOURCE === 'philindo-one') {
+    try {
+      const p = fetchPhilindoOne_();
+      return { ss: ss, rows: p.rows, headers: p.headers, source: 'philindo-one', etaHistory: p.etaHistory, fallback: '' };
+    } catch (e) {
+      fallback = 'Philindo One could not be read (' + e.message + ') — today\'s checks used the LogiSys sheet instead.';
+      Logger.log(fallback);
+    }
+  }
   const live = readTab_(ss, CONFIG.SHEET_LIVE, 1);
   requireHeaders_(live.headers, LIVE_REQUIRED, CONFIG.SHEET_LIVE);
-  return { ss: ss, rows: live.rows, headers: live.headers };
+  return { ss: ss, rows: live.rows, headers: live.headers, source: 'sheet', fallback: fallback };
+}
+
+/**
+ * Philindo One's read-only Penny feed: this year's jobs in the LogiSys Live
+ * shape (same headers), plus every ETA change. Read only; Penny never writes
+ * to Philindo One. Throws on anything unexpected, so the caller falls back.
+ */
+function fetchPhilindoOne_() {
+  const token = PropertiesService.getScriptProperties().getProperty('PENNY_FEED_TOKEN');
+  if (!token) throw new Error('PENNY_FEED_TOKEN is not set in Script Properties');
+  const url = CONFIG.PHILINDO_ONE_URL.replace(/\/+$/, '') + '/api/ops/penny-feed';
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true, followRedirects: false
+  });
+  const code = res.getResponseCode();
+  if (code !== 200) {
+    throw new Error('HTTP ' + code + (code === 401 ? ', the token does not match Vercel\'s PENNY_FEED_TOKEN' :
+                     code === 503 ? ', PENNY_FEED_TOKEN is not set in Vercel' : ''));
+  }
+  var body;
+  try { body = JSON.parse(res.getContentText()); } catch (e) { throw new Error('the feed did not return JSON'); }
+  const headers = (body.headers || []).map(norm_);
+  requireHeaders_(headers, LIVE_REQUIRED, 'the Philindo One feed');
+  const rows = [];
+  (body.rows || []).forEach(function (raw, i) {
+    if (!norm_(raw[0])) return;
+    const o = { _row: i + 2, _raw: raw };
+    headers.forEach(function (h, j) { if (h && !(h in o)) o[h] = raw[j] === null ? '' : raw[j]; });
+    rows.push(o);
+  });
+  if (!rows.length) throw new Error('the feed has no jobs');
+  return { rows: rows, headers: headers, etaHistory: body.etaHistory || [] };
 }
 
 var caReadError_ = '';
@@ -128,12 +175,68 @@ function previousEtas_(ss) {
   return { map: out, available: true, asOf: asOf };
 }
 
+/**
+ * The same, from Philindo One. There is no archive there, so:
+ *   - a JO's earlier ETA is the "old" value of its first ETA change since
+ *     Penny's last morning run (no change since = the ETA it has now);
+ *   - the JOs Penny had already seen are the list she kept at that run.
+ * Before the first run with Philindo One, "since" is the start of today and
+ * new-JO detection waits a day (known = null).
+ */
+function previousFromPhilindoOne_(rows, etaHistory) {
+  const props = PropertiesService.getScriptProperties();
+  const last = props.getProperty(PENNY_LAST_RUN_);
+  var since = last ? new Date(last) : null;
+  if (!since || isNaN(since.getTime())) since = today_();
+  const out = {};
+  rows.forEach(function (r) {
+    const jo = norm_(r['JO Number']);
+    if (jo) out[jo] = { eta: validDate_(r['ETA']), badEta: isBadDate_(r['ETA']) };
+  });
+  const first = {};
+  (etaHistory || []).slice().sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : 1; })
+    .forEach(function (e) {
+      const jo = norm_(e.jo), at = new Date(e.at);
+      if (!jo || !(jo in out) || first[jo] || isNaN(at.getTime()) || at < since) return;
+      first[jo] = true;
+      out[jo] = { eta: validDate_(e.old), badEta: isBadDate_(e.old) };
+    });
+  return { map: out, available: true, asOf: since, known: readSeenJos_() };
+}
+
+const PENNY_LAST_RUN_ = 'penny:lastRun';
+const PENNY_SEEN_ = 'penny:seenJos.';            // + 0, 1, 2 … (a property holds about 9 KB)
+
+/** The JO numbers Penny saw at her last morning run, or null if she has none. */
+function readSeenJos_() {
+  const props = PropertiesService.getScriptProperties();
+  var s = '', i = 0, part;
+  while ((part = props.getProperty(PENNY_SEEN_ + i)) !== null) { s += part; i++; }
+  if (!i) return null;
+  const set = {};
+  s.split(',').forEach(function (jo) { if (jo) set[jo] = true; });
+  return set;
+}
+
+/** After a real morning run on Philindo One: remember the time and the JOs seen. */
+function rememberRun_(rows, at) {
+  const props = PropertiesService.getScriptProperties();
+  const s = rows.map(function (r) { return norm_(r['JO Number']); }).filter(function (x) { return x; }).join(',');
+  const parts = [];
+  for (var i = 0; i < s.length; i += 8000) parts.push(s.slice(i, i + 8000));
+  props.getKeys().forEach(function (k) { if (k.indexOf(PENNY_SEEN_) === 0) props.deleteProperty(k); });
+  parts.forEach(function (p, j) { props.setProperty(PENNY_SEEN_ + j, p); });
+  props.setProperty(PENNY_LAST_RUN_, at.toISOString());
+}
+
 /** JOs in today's report never seen in an earlier one = newly encoded. */
 function newJos_(rows, prev) {
   if (!prev.available) return [];
+  const known = prev.known !== undefined ? prev.known : prev.map;
+  if (!known) return [];
   return currentRows_(rows).rows.filter(function (r) {
     const jo = norm_(r['JO Number']);
-    return jo && !(jo in prev.map) && !isDelivered_(r);
+    return jo && !(jo in known) && !isDelivered_(r);
   }).map(function (r) {
     return { jo: norm_(r['JO Number']), client: norm_(r['Client']),
              commodity: norm_(r['Commodity']) || norm_(r['Goods Description']),

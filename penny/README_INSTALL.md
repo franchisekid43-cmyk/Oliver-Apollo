@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **114 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **133 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -40,6 +40,42 @@ and tells the COO.
 | `dryRun()` | Logs everything, sends nothing, writes nothing |
 | `runPenny()` | The real run |
 | `bootstrapFeedSheets()` | Creates LogiSys Live + Archive with correct headers, if they don't exist |
+
+## Where the shipments come from — Philindo One
+
+```
+FEED_SOURCE:      'philindo-one'      // or 'sheet' for LogiSys Live / LogiSys Archive
+PHILINDO_ONE_URL: 'https://philindo-command-center-git-ops-system-philindo.vercel.app'
+```
+
+Penny reads Philindo One's read-only Penny feed (`/api/ops/penny-feed`, built in the Philindo One
+system): this year's jobs in the same 34 columns as LogiSys Live, plus every ETA change. She never
+writes to Philindo One. What changes:
+
+- **Handlers** come from Philindo One (the client's assigned handler), so far fewer shipments
+  arrive with "no handler".
+- **Status, stage and delivery** are Philindo One's, including what the team updates there. A job at
+  stage Delivered or Closing, or with a delivered date, is never chased.
+- **ETA changes** come from Philindo One's change log: the first change since Penny's last morning run.
+- **New job orders** are the ones she had not seen at her last morning run (she keeps the list in
+  Script Properties). On her first morning on Philindo One there is no list yet, so they start the
+  next day, and the email says so.
+- **Penny Arrivals** and the monthly report are counted from Philindo One's jobs.
+
+**Switching it on (once):**
+
+1. In Vercel, on the Philindo One project, add an environment variable `PENNY_FEED_TOKEN` with a
+   long random value. Add it for the environment that `PHILINDO_ONE_URL` points to (Preview, branch
+   `ops-system`, for the test link). Then redeploy.
+2. In Penny's Apps Script project: **Project Settings → Script Properties → Add script property**.
+   Set `PENNY_FEED_TOKEN` to the same value. The token is never written in the code.
+3. Run **`dryRun()`** once from the editor, signed in as ops.philindo@gmail.com. Google asks to allow
+   "Connect to an external service". Allow it, or the 07:45 trigger can't reach Philindo One. The
+   log's `Data:` line says which source was used.
+
+**If Philindo One can't be read** (no token, a wrong token, the site down, an empty feed), Penny uses
+the LogiSys Live sheet that morning, as before. The COO's email says why, so a day is never skipped.
+Set `FEED_SOURCE: 'sheet'` to stop using Philindo One.
 
 ## Who receives email — today
 

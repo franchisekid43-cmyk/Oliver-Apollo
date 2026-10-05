@@ -73,6 +73,18 @@ const CONFIG = {
   // Flip to true once Ariel updates LogiSys directly. Nothing else changes.
   TRUST_LOGISYS_ATA: false,
 
+  // ---- Where the shipments come from — ONE switch ------------------------
+  //   'philindo-one' -> Philindo One's read-only Penny feed (/api/ops/penny-feed):
+  //                     the jobs as the team keeps them there, handlers from the
+  //                     client's assigned handler, and every ETA change.
+  //   'sheet'        -> the LogiSys Live / LogiSys Archive sheets (the importer's).
+  // If Philindo One can't be read, Penny uses the sheet that morning and says so
+  // in the COO's email — she never skips a day because of it.
+  // The token is NOT kept here: Project Settings -> Script Properties ->
+  // PENNY_FEED_TOKEN, the same value as PENNY_FEED_TOKEN in Vercel.
+  FEED_SOURCE: 'philindo-one',
+  PHILINDO_ONE_URL: 'https://philindo-command-center-git-ops-system-philindo.vercel.app',
+
   // ---- Spreadsheets ---------------------------------------------------
   // The workbook holding LogiSys Live + LogiSys Archive (written by importer).
   // Leave blank to use the spreadsheet this script is bound to.
@@ -367,11 +379,16 @@ function arrivalOf_(r) {
            doubt: copied ? 'ATA equals ETA with no post-arrival milestone — not treated as arrived' : '' };
 }
 
-/** Delivered = a delivery date, the Delivered column, or a delivered status. */
+/**
+ * Delivered = a delivery date, the Delivered column (a date, or yes), a
+ * completed job, the Delivered or Closing stage (Philindo One's rule), or a
+ * delivered status.
+ */
 function isDelivered_(r) {
-  if (validDate_(r['Delivery Date'])) return true;
+  if (validDate_(r['Delivery Date']) || validDate_(r['Job Completed On'])) return true;
   const flag = r['Delivered'];
-  if (isDateObj_(flag) || /^(y|yes|true|delivered)$/i.test(norm_(flag))) return true;
+  if (isDateObj_(flag) || asDate_(flag) || /^(y|yes|true|delivered)$/i.test(norm_(flag))) return true;
+  if (/^(delivered|closing)$/i.test(norm_(r['Stage']))) return true;
   return containsAny_(r['Status'], CONFIG.STATUS_DELIVERED);
 }
 
@@ -457,11 +474,58 @@ function ownSheet_(ss, name) {
 // ======================= Queues.gs =======================
 /** ============ Load the feed and build the five queues ============ */
 
+/**
+ * This morning's shipments. From Philindo One when FEED_SOURCE says so; from
+ * LogiSys Live otherwise, or when Philindo One can't be read — then
+ * `fallback` says why, and the COO's email carries it.
+ */
 function loadFeed_() {
   const ss = feedBook_();
+  var fallback = '';
+  if (CONFIG.FEED_SOURCE === 'philindo-one') {
+    try {
+      const p = fetchPhilindoOne_();
+      return { ss: ss, rows: p.rows, headers: p.headers, source: 'philindo-one', etaHistory: p.etaHistory, fallback: '' };
+    } catch (e) {
+      fallback = 'Philindo One could not be read (' + e.message + ') — today\'s checks used the LogiSys sheet instead.';
+      Logger.log(fallback);
+    }
+  }
   const live = readTab_(ss, CONFIG.SHEET_LIVE, 1);
   requireHeaders_(live.headers, LIVE_REQUIRED, CONFIG.SHEET_LIVE);
-  return { ss: ss, rows: live.rows, headers: live.headers };
+  return { ss: ss, rows: live.rows, headers: live.headers, source: 'sheet', fallback: fallback };
+}
+
+/**
+ * Philindo One's read-only Penny feed: this year's jobs in the LogiSys Live
+ * shape (same headers), plus every ETA change. Read only; Penny never writes
+ * to Philindo One. Throws on anything unexpected, so the caller falls back.
+ */
+function fetchPhilindoOne_() {
+  const token = PropertiesService.getScriptProperties().getProperty('PENNY_FEED_TOKEN');
+  if (!token) throw new Error('PENNY_FEED_TOKEN is not set in Script Properties');
+  const url = CONFIG.PHILINDO_ONE_URL.replace(/\/+$/, '') + '/api/ops/penny-feed';
+  const res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true, followRedirects: false
+  });
+  const code = res.getResponseCode();
+  if (code !== 200) {
+    throw new Error('HTTP ' + code + (code === 401 ? ', the token does not match Vercel\'s PENNY_FEED_TOKEN' :
+                     code === 503 ? ', PENNY_FEED_TOKEN is not set in Vercel' : ''));
+  }
+  var body;
+  try { body = JSON.parse(res.getContentText()); } catch (e) { throw new Error('the feed did not return JSON'); }
+  const headers = (body.headers || []).map(norm_);
+  requireHeaders_(headers, LIVE_REQUIRED, 'the Philindo One feed');
+  const rows = [];
+  (body.rows || []).forEach(function (raw, i) {
+    if (!norm_(raw[0])) return;
+    const o = { _row: i + 2, _raw: raw };
+    headers.forEach(function (h, j) { if (h && !(h in o)) o[h] = raw[j] === null ? '' : raw[j]; });
+    rows.push(o);
+  });
+  if (!rows.length) throw new Error('the feed has no jobs');
+  return { rows: rows, headers: headers, etaHistory: body.etaHistory || [] };
 }
 
 var caReadError_ = '';
@@ -585,12 +649,68 @@ function previousEtas_(ss) {
   return { map: out, available: true, asOf: asOf };
 }
 
+/**
+ * The same, from Philindo One. There is no archive there, so:
+ *   - a JO's earlier ETA is the "old" value of its first ETA change since
+ *     Penny's last morning run (no change since = the ETA it has now);
+ *   - the JOs Penny had already seen are the list she kept at that run.
+ * Before the first run with Philindo One, "since" is the start of today and
+ * new-JO detection waits a day (known = null).
+ */
+function previousFromPhilindoOne_(rows, etaHistory) {
+  const props = PropertiesService.getScriptProperties();
+  const last = props.getProperty(PENNY_LAST_RUN_);
+  var since = last ? new Date(last) : null;
+  if (!since || isNaN(since.getTime())) since = today_();
+  const out = {};
+  rows.forEach(function (r) {
+    const jo = norm_(r['JO Number']);
+    if (jo) out[jo] = { eta: validDate_(r['ETA']), badEta: isBadDate_(r['ETA']) };
+  });
+  const first = {};
+  (etaHistory || []).slice().sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : 1; })
+    .forEach(function (e) {
+      const jo = norm_(e.jo), at = new Date(e.at);
+      if (!jo || !(jo in out) || first[jo] || isNaN(at.getTime()) || at < since) return;
+      first[jo] = true;
+      out[jo] = { eta: validDate_(e.old), badEta: isBadDate_(e.old) };
+    });
+  return { map: out, available: true, asOf: since, known: readSeenJos_() };
+}
+
+const PENNY_LAST_RUN_ = 'penny:lastRun';
+const PENNY_SEEN_ = 'penny:seenJos.';            // + 0, 1, 2 … (a property holds about 9 KB)
+
+/** The JO numbers Penny saw at her last morning run, or null if she has none. */
+function readSeenJos_() {
+  const props = PropertiesService.getScriptProperties();
+  var s = '', i = 0, part;
+  while ((part = props.getProperty(PENNY_SEEN_ + i)) !== null) { s += part; i++; }
+  if (!i) return null;
+  const set = {};
+  s.split(',').forEach(function (jo) { if (jo) set[jo] = true; });
+  return set;
+}
+
+/** After a real morning run on Philindo One: remember the time and the JOs seen. */
+function rememberRun_(rows, at) {
+  const props = PropertiesService.getScriptProperties();
+  const s = rows.map(function (r) { return norm_(r['JO Number']); }).filter(function (x) { return x; }).join(',');
+  const parts = [];
+  for (var i = 0; i < s.length; i += 8000) parts.push(s.slice(i, i + 8000));
+  props.getKeys().forEach(function (k) { if (k.indexOf(PENNY_SEEN_) === 0) props.deleteProperty(k); });
+  parts.forEach(function (p, j) { props.setProperty(PENNY_SEEN_ + j, p); });
+  props.setProperty(PENNY_LAST_RUN_, at.toISOString());
+}
+
 /** JOs in today's report never seen in an earlier one = newly encoded. */
 function newJos_(rows, prev) {
   if (!prev.available) return [];
+  const known = prev.known !== undefined ? prev.known : prev.map;
+  if (!known) return [];
   return currentRows_(rows).rows.filter(function (r) {
     const jo = norm_(r['JO Number']);
-    return jo && !(jo in prev.map) && !isDelivered_(r);
+    return jo && !(jo in known) && !isDelivered_(r);
   }).map(function (r) {
     return { jo: norm_(r['JO Number']), client: norm_(r['Client']),
              commodity: norm_(r['Commodity']) || norm_(r['Goods Description']),
@@ -847,8 +967,11 @@ function buildQueues_(rows, hmap, prev) {
  *  Philindo web app. The Command Center READS these sheets.
  */
 
-/** Every shipment ever seen, from the archive, deduplicated latest-wins. */
-function allShipmentsYtd_(ss, year) {
+/**
+ * Every shipment ever seen, from the archive, deduplicated latest-wins.
+ * With `rows` (Philindo One's jobs), those are the whole record instead.
+ */
+function allShipmentsYtd_(ss, year, rows) {
   const seen = {};
   function take(rows) {
     rows.forEach(function (r) {
@@ -861,8 +984,11 @@ function allShipmentsYtd_(ss, year) {
       }
     });
   }
-  if (ss.getSheetByName(CONFIG.SHEET_ARCHIVE)) take(readTab_(ss, CONFIG.SHEET_ARCHIVE, 1).rows);
-  take(readTab_(ss, CONFIG.SHEET_LIVE, 1).rows);            // live wins
+  if (rows) take(rows);
+  else {
+    if (ss.getSheetByName(CONFIG.SHEET_ARCHIVE)) take(readTab_(ss, CONFIG.SHEET_ARCHIVE, 1).rows);
+    take(readTab_(ss, CONFIG.SHEET_LIVE, 1).rows);          // live wins
+  }
 
   const out = [];
   Object.keys(seen).forEach(function (jo) {
@@ -1359,10 +1485,11 @@ function execute_(dry, mode) {
     const day = fmtDateLong_(today_());
     const msg = 'LogiSys feed for ' + day + ' has not arrived. No pending checks run today.';
     say('FEED STALE: ' + msg + ' (' + stale + ')');
-    const e = { person: 'COO', to: CONFIG.RECIPIENTS.coo, jos: [], lines: [stale],
+    const e = { person: 'COO', to: CONFIG.RECIPIENTS.coo, jos: [], lines: [stale].concat(feed.fallback ? [feed.fallback] : []),
       subject: CONFIG.AGENT + ': LogiSys feed for ' + day + ' not received',
       html: wrap_('<h2 style="margin:0 0 8px;font-size:17px;">LogiSys feed missing</h2>' +
                   '<p>' + esc_(msg) + '</p><p style="color:#5b6b60;">' + esc_(stale) + '.</p>' +
+                  (feed.fallback ? '<p>' + esc_(feed.fallback) + '</p>' : '') +
                   '<p>Penny sent nothing to anyone else this morning.</p>', '') };
     sendAll_([e], dry, say);
     return log.join('\n');
@@ -1371,10 +1498,13 @@ function execute_(dry, mode) {
   var Q, deliveredJos = {};
   try {
     const hmap = handlerMap_();
-    const prev = previousEtas_(ss);
+    const prev = feed.source === 'philindo-one' ? previousFromPhilindoOne_(feed.rows, feed.etaHistory)
+                                                : previousEtas_(ss);
     Q = buildQueues_(feed.rows, hmap, prev);
     Q.q3 = newJos_(feed.rows, prev);
     Q.prevAvailable = prev.available;
+    Q.source = feed.source;
+    Q.newJosChecked = prev.available && (prev.known !== undefined ? !!prev.known : true);
     currentRows_(feed.rows).rows.forEach(function (r) {
       if (isDelivered_(r)) deliveredJos[norm_(r['JO Number'])] = true;
     });
@@ -1383,9 +1513,12 @@ function execute_(dry, mode) {
   }
 
   const notes = [];
+  if (feed.fallback) notes.push(feed.fallback);
   if (caReadError_) notes.push('CA Tracker could not be read (' + caReadError_ +
     ') — handlers come from LogiSys only and cash-advance state is unknown today.');
   if (!Q.prevAvailable) notes.push('No earlier report in LogiSys Archive — ETA-change and new-JO checks skipped today.');
+  else if (!Q.newJosChecked) notes.push('First morning on Philindo One — new job orders are listed from tomorrow.');
+  say('Data: ' + (feed.source === 'philindo-one' ? 'Philindo One (' + CONFIG.PHILINDO_ONE_URL + ')' : 'LogiSys Live sheet'));
 
   say('Feed rows: ' + feed.rows.length + ' (this morning\'s report: ' + currentRows_(feed.rows).rows.length +
       ', out of scope before ' + fmtDateLong_(CONFIG.SCOPE_FROM) + ': ' + Q.outOfScope + ')');
@@ -1402,13 +1535,14 @@ function execute_(dry, mode) {
   // ---------- arrivals record (Penny's own sheets) ----------
   const arr = { summary: null, monthly: null };
   if (!ariel) try {
-    const ships = allShipmentsYtd_(ss, now.getFullYear());
+    const p1 = feed.source === 'philindo-one' ? feed.rows : null;   // Philindo One holds the year's jobs
+    const ships = allShipmentsYtd_(ss, now.getFullYear(), p1);
     if (!dry) arr.summary = updateArrivals_(ss, ships, now.getFullYear());
     say('Arrivals YTD: ' + ships.length + ' shipments' + (dry ? ' (dry run — not written)' : ''));
 
     const due = monthlyDue_(ss, now);
     if (due) {
-      if (!dry) arr.monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, due.year), due.year, due.month);
+      if (!dry) arr.monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, due.year, due.year === now.getFullYear() ? p1 : null), due.year, due.month);
       say('Monthly report: ' + due.name + (dry ? ' is due (dry run — not written)' : ' (' + arr.monthly.total + ' rows)'));
     }
   } catch (e) {
@@ -1424,6 +1558,8 @@ function execute_(dry, mode) {
   }
   const sent = sendAll_(emails, dry, say);
   say('Emails ' + (dry ? 'that would be sent' : 'sent') + ': ' + sent);
+  // The next morning's ETA-change and new-JO checks count from this run.
+  if (!dry && !ariel && feed.source === 'philindo-one') rememberRun_(feed.rows, now);
   return log.join('\n');
 }
 
@@ -1514,6 +1650,7 @@ function planEmails_(Q, arr, notes, mode) {
   }
 
   const team = CONFIG.TEAM_EMAILS === true;           // off: the COO's email only
+  const dataNote = Q.source === 'philindo-one' ? 'Data from Philindo One.' : '';
 
   // ---- handlers ----
   if (team) Object.keys(byHandler).forEach(function (h) {
@@ -1560,7 +1697,7 @@ function planEmails_(Q, arr, notes, mode) {
               items: ariel.q5a, opts: { plain: true },
               note: 'Once the ETA is in, the team can plan trucking and the cash advance.' }
           ]) +
-          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', '')
+          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', dataNote)
       });
     }
   }
@@ -1654,7 +1791,7 @@ function planEmails_(Q, arr, notes, mode) {
   else subject = CONFIG.AGENT + ': run notes';
 
   emails.push({ person: 'COO', to: R.coo, subject: subject, jos: cooJos,
-                lines: linesOf(coo).concat(cooNotes), html: wrap_(body, '') });
+                lines: linesOf(coo).concat(cooNotes), html: wrap_(body, dataNote) });
   return emails;
 }
 

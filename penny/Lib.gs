@@ -155,11 +155,16 @@ function arrivalOf_(r) {
            doubt: copied ? 'ATA equals ETA with no post-arrival milestone — not treated as arrived' : '' };
 }
 
-/** Delivered = a delivery date, the Delivered column, or a delivered status. */
+/**
+ * Delivered = a delivery date, the Delivered column (a date, or yes), a
+ * completed job, the Delivered or Closing stage (Philindo One's rule), or a
+ * delivered status.
+ */
 function isDelivered_(r) {
-  if (validDate_(r['Delivery Date'])) return true;
+  if (validDate_(r['Delivery Date']) || validDate_(r['Job Completed On'])) return true;
   const flag = r['Delivered'];
-  if (isDateObj_(flag) || /^(y|yes|true|delivered)$/i.test(norm_(flag))) return true;
+  if (isDateObj_(flag) || asDate_(flag) || /^(y|yes|true|delivered)$/i.test(norm_(flag))) return true;
+  if (/^(delivered|closing)$/i.test(norm_(r['Stage']))) return true;
   return containsAny_(r['Status'], CONFIG.STATUS_DELIVERED);
 }
 

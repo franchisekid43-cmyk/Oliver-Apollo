@@ -103,10 +103,11 @@ function execute_(dry, mode) {
     const day = fmtDateLong_(today_());
     const msg = 'LogiSys feed for ' + day + ' has not arrived. No pending checks run today.';
     say('FEED STALE: ' + msg + ' (' + stale + ')');
-    const e = { person: 'COO', to: CONFIG.RECIPIENTS.coo, jos: [], lines: [stale],
+    const e = { person: 'COO', to: CONFIG.RECIPIENTS.coo, jos: [], lines: [stale].concat(feed.fallback ? [feed.fallback] : []),
       subject: CONFIG.AGENT + ': LogiSys feed for ' + day + ' not received',
       html: wrap_('<h2 style="margin:0 0 8px;font-size:17px;">LogiSys feed missing</h2>' +
                   '<p>' + esc_(msg) + '</p><p style="color:#5b6b60;">' + esc_(stale) + '.</p>' +
+                  (feed.fallback ? '<p>' + esc_(feed.fallback) + '</p>' : '') +
                   '<p>Penny sent nothing to anyone else this morning.</p>', '') };
     sendAll_([e], dry, say);
     return log.join('\n');
@@ -115,10 +116,13 @@ function execute_(dry, mode) {
   var Q, deliveredJos = {};
   try {
     const hmap = handlerMap_();
-    const prev = previousEtas_(ss);
+    const prev = feed.source === 'philindo-one' ? previousFromPhilindoOne_(feed.rows, feed.etaHistory)
+                                                : previousEtas_(ss);
     Q = buildQueues_(feed.rows, hmap, prev);
     Q.q3 = newJos_(feed.rows, prev);
     Q.prevAvailable = prev.available;
+    Q.source = feed.source;
+    Q.newJosChecked = prev.available && (prev.known !== undefined ? !!prev.known : true);
     currentRows_(feed.rows).rows.forEach(function (r) {
       if (isDelivered_(r)) deliveredJos[norm_(r['JO Number'])] = true;
     });
@@ -127,9 +131,12 @@ function execute_(dry, mode) {
   }
 
   const notes = [];
+  if (feed.fallback) notes.push(feed.fallback);
   if (caReadError_) notes.push('CA Tracker could not be read (' + caReadError_ +
     ') — handlers come from LogiSys only and cash-advance state is unknown today.');
   if (!Q.prevAvailable) notes.push('No earlier report in LogiSys Archive — ETA-change and new-JO checks skipped today.');
+  else if (!Q.newJosChecked) notes.push('First morning on Philindo One — new job orders are listed from tomorrow.');
+  say('Data: ' + (feed.source === 'philindo-one' ? 'Philindo One (' + CONFIG.PHILINDO_ONE_URL + ')' : 'LogiSys Live sheet'));
 
   say('Feed rows: ' + feed.rows.length + ' (this morning\'s report: ' + currentRows_(feed.rows).rows.length +
       ', out of scope before ' + fmtDateLong_(CONFIG.SCOPE_FROM) + ': ' + Q.outOfScope + ')');
@@ -146,13 +153,14 @@ function execute_(dry, mode) {
   // ---------- arrivals record (Penny's own sheets) ----------
   const arr = { summary: null, monthly: null };
   if (!ariel) try {
-    const ships = allShipmentsYtd_(ss, now.getFullYear());
+    const p1 = feed.source === 'philindo-one' ? feed.rows : null;   // Philindo One holds the year's jobs
+    const ships = allShipmentsYtd_(ss, now.getFullYear(), p1);
     if (!dry) arr.summary = updateArrivals_(ss, ships, now.getFullYear());
     say('Arrivals YTD: ' + ships.length + ' shipments' + (dry ? ' (dry run — not written)' : ''));
 
     const due = monthlyDue_(ss, now);
     if (due) {
-      if (!dry) arr.monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, due.year), due.year, due.month);
+      if (!dry) arr.monthly = buildMonthlyReport_(ss, allShipmentsYtd_(ss, due.year, due.year === now.getFullYear() ? p1 : null), due.year, due.month);
       say('Monthly report: ' + due.name + (dry ? ' is due (dry run — not written)' : ' (' + arr.monthly.total + ' rows)'));
     }
   } catch (e) {
@@ -168,6 +176,8 @@ function execute_(dry, mode) {
   }
   const sent = sendAll_(emails, dry, say);
   say('Emails ' + (dry ? 'that would be sent' : 'sent') + ': ' + sent);
+  // The next morning's ETA-change and new-JO checks count from this run.
+  if (!dry && !ariel && feed.source === 'philindo-one') rememberRun_(feed.rows, now);
   return log.join('\n');
 }
 
@@ -258,6 +268,7 @@ function planEmails_(Q, arr, notes, mode) {
   }
 
   const team = CONFIG.TEAM_EMAILS === true;           // off: the COO's email only
+  const dataNote = Q.source === 'philindo-one' ? 'Data from Philindo One.' : '';
 
   // ---- handlers ----
   if (team) Object.keys(byHandler).forEach(function (h) {
@@ -304,7 +315,7 @@ function planEmails_(Q, arr, notes, mode) {
               items: ariel.q5a, opts: { plain: true },
               note: 'Once the ETA is in, the team can plan trucking and the cash advance.' }
           ]) +
-          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', '')
+          '<p style="margin:18px 0 0;">That\'s all for today. Thank you, Ariel!<br>— Penny</p>', dataNote)
       });
     }
   }
@@ -398,7 +409,7 @@ function planEmails_(Q, arr, notes, mode) {
   else subject = CONFIG.AGENT + ': run notes';
 
   emails.push({ person: 'COO', to: R.coo, subject: subject, jos: cooJos,
-                lines: linesOf(coo).concat(cooNotes), html: wrap_(body, '') });
+                lines: linesOf(coo).concat(cooNotes), html: wrap_(body, dataNote) });
   return emails;
 }
 
