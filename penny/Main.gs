@@ -126,6 +126,18 @@ function execute_(dry, mode) {
     currentRows_(feed.rows).rows.forEach(function (r) {
       if (isDelivered_(r)) deliveredJos[norm_(r['JO Number'])] = true;
     });
+    // Ariel's list: never ask about a job this morning's LogiSys report already
+    // shows as updated, even if Philindo One has not brought that report in yet.
+    Q.alreadyUpdated = [];
+    if (feed.source === 'philindo-one') {
+      const lt = logisysToday_(ss, hmap);
+      if (lt) {
+        const done = function (s) { return lt.present[s.jo] && !lt.asks[s.jo]; };
+        Q.alreadyUpdated = Q.q4.concat(Q.q5a).filter(done).map(function (s) { return s.jo; });
+        Q.q4 = Q.q4.filter(function (s) { return !done(s); });
+        Q.q5a = Q.q5a.filter(function (s) { return !done(s); });
+      }
+    }
   } catch (e) {
     return fail_(dry, 'could not build the queues', e.message, log);
   }
@@ -148,6 +160,8 @@ function execute_(dry, mode) {
   say('Q5a no ETA: ' + Q.q5a.length +
       ' | Q5b ETA changed: ' + Q.q5b.length + (Q.prevAvailable ? '' : ' (no prior report — skipped)') +
       ' | Q5c ETA passed: ' + Q.q5c.length);
+  if (Q.alreadyUpdated.length) say('Already updated in this morning\'s LogiSys report, left off Ariel\'s list: ' +
+      Q.alreadyUpdated.length + ' (' + Q.alreadyUpdated.join(', ') + ')');
   say('Date defects: ' + Q.defects.length + ' | LogiSys ATA not used: ' + Q.untrusted.length);
 
   // ---------- arrivals record (Penny's own sheets) ----------

@@ -229,6 +229,30 @@ function rememberRun_(rows, at) {
   props.setProperty(PENNY_LAST_RUN_, at.toISOString());
 }
 
+/**
+ * Philindo One brings in LogiSys's morning report only when someone opens it,
+ * so at 07:45 or 10:00 it can still hold yesterday's state. This reads this
+ * morning's LogiSys report (LogiSys Live) and says which JOs it carries and
+ * which of them it would still ask Ariel about. Null when there is no report
+ * from today to compare with.
+ */
+function logisysToday_(ss, hmap) {
+  try {
+    const live = readTab_(ss, CONFIG.SHEET_LIVE, 1);
+    const newest = feedDate_(live.rows);
+    if (!newest || daysBetween_(newest, today_()) !== 0) return null;
+    const q = buildQueues_(live.rows, hmap, { map: {}, available: false });
+    const present = {}, asks = {};
+    currentRows_(live.rows).rows.forEach(function (r) { present[norm_(r['JO Number'])] = true; });
+    q.q4.concat(q.q5a.filter(function (s) { return s.sev !== 'green'; }))
+      .forEach(function (s) { asks[s.jo] = true; });
+    return { present: present, asks: asks };
+  } catch (e) {
+    Logger.log('LogiSys Live could not be compared: ' + e.message);
+    return null;
+  }
+}
+
 /** JOs in today's report never seen in an earlier one = newly encoded. */
 function newJos_(rows, prev) {
   if (!prev.available) return [];
@@ -366,11 +390,18 @@ function buildQueues_(rows, hmap, prev) {
     });
     (cur.notes[jo] || []).forEach(function (n) { flag(base, n, 'amber', { duplicate: true }); });
 
-    // ---- Queue 4: stale status (8+ days)
+    // ---- Queue 4: stale status (8+ days) — only where an update is due.
+    // Not while the vessel or flight is still on its way (ETA today or later:
+    // the next update is the arrival), and not for a job with nothing recorded
+    // yet (no status and no dates: before booking, like a blank ETD in 5a).
     if (upd) {
       const sdays = daysBetween_(upd, T);
-      if (sdays >= CONFIG.Q4_STALE_RED) {
-        flag(base, 'no status update since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
+      const sailing = !arr.arrived && eta && eta >= T;
+      const nothingYet = !status && !etd && !eta && !validDate_(r['ATA']);
+      if (sdays >= CONFIG.Q4_STALE_RED && !sailing && !nothingYet) {
+        flag(base, !arr.arrived && eta
+          ? 'ETA was ' + fmtDate_(eta) + ', arrival not recorded yet (last update ' + fmtDate_(upd) + ')'
+          : 'no status update since ' + fmtDate_(upd) + ' (' + sdays + ' days)', 'red', { age: sdays });
       }
     }
 

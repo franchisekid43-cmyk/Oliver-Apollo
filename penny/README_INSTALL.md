@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **135 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **145 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -61,6 +61,10 @@ writes to Philindo One. What changes:
   Script Properties). On her first morning on Philindo One there is no list yet, so they start the
   next day, and the email says so.
 - **Penny Arrivals** and the monthly report are counted from Philindo One's jobs.
+- **Ariel's list is cross-checked with this morning's LogiSys report.** On the test link,
+  Philindo One brings in the 06:00 LogiSys report only when someone opens its dashboard or
+  Shipment Board, so at 10:00 it can still hold yesterday's state. A job that today's LogiSys Live
+  already shows as updated is left off Ariel's list; the log names each one. (Team report, 8 Oct.)
 
 **Switching it on (once):**
 
@@ -150,6 +154,10 @@ Queue 1 goes **red on day 4** (two days before the first charge) and
 - **CRITICAL in a subject line** is triggered only by shipment-risk items (queues 1, 2, 5b, 5c).
   Stale status and missing ETAs (queues 4 and 5a) are data work for Ariel and never make a
   subject CRITICAL — soul.md: "those words are budget, not decoration".
+- **"Status to check" only where an update is due** (team report, 8 Oct 2026). A shipment still on
+  its way (ETA today or later) is not chased: its next update is the arrival. A job with nothing
+  recorded yet (no status, no dates) is treated as not yet booked. Once the ETA has passed with
+  no arrival, the line says so: "ETA was 2 Oct, arrival not recorded yet".
 - **Only this morning's report is queued.** A JO whose row in LogiSys Live carries an older
   Source Report Date has dropped out of the LogiSys report and is not chased.
 - **The COO email is silent** on a morning with nothing amber or red, no new JOs and no notes.

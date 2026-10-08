@@ -306,7 +306,7 @@ test('Queue 3 — new job orders since the previous report', () => {
 test('Queue 4 — stale at 8 days, not at 7', () => {
   const live = [
     ship({ 'JO Number': 'S-7', 'Last Updated': daysAgo(7), 'ETA': daysAhead(9) }),
-    ship({ 'JO Number': 'S-8', 'Last Updated': daysAgo(8), 'ETA': daysAhead(9) })
+    ship({ 'JO Number': 'S-8', 'Last Updated': daysAgo(8), 'ETA': '', 'ETD': '' })
   ];
   const Q = runQueues({ live });
   check('7 days — no stale notice', !Q.q4.some(s => s.jo === 'S-7'));
@@ -414,7 +414,7 @@ test('Routing, subjects and recipients', () => {
     ship({ 'JO Number': 'R-ANDREW', 'Account Handler': 'Andrew Mausig', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' }),
     ship({ 'JO Number': 'R-NONE', 'Account Handler': '', 'ATA': daysAgo(3), 'ETA': daysAgo(4), 'Status': 'DO Issued' }),
     ship({ 'JO Number': 'R-CA', 'Account Handler': '', 'ATA': daysAgo(3), 'ETA': daysAgo(4), 'Status': 'DO Issued' }),
-    ship({ 'JO Number': 'R-STALE', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) })
+    ship({ 'JO Number': 'R-STALE', 'Last Updated': daysAgo(12), 'ETA': '', 'ETD': '' })
   ];
   world({ live, ca: [{ jo: 'R-CA', by: 'JENA LUCIDO' }] });
   W.run('runPenny()');
@@ -547,7 +547,7 @@ test('Project not on Manila time -> Penny stops and says how to fix it', () => {
 
 test('Shadow mode — every email goes to one address, marked with who it was for', () => {
   const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' }),
-                ship({ 'JO Number': 'SH-2', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) })];
+                ship({ 'JO Number': 'SH-2', 'Last Updated': daysAgo(12), 'ETA': '', 'ETD': '' })];
   world({ live, shadow: 'me@example.com' });
   W.run('runPenny()');
   check('all emails go to the shadow address', W.mail.length >= 3 && W.mail.every(m => m.to === 'me@example.com'), W.mail.map(m => m.to).join(','));
@@ -557,7 +557,7 @@ test('Shadow mode — every email goes to one address, marked with who it was fo
 
 test('Team emails off — only the COO hears from Penny', () => {
   const live = [ship({ 'JO Number': 'TO-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' }),
-                ship({ 'JO Number': 'TO-2', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) }),
+                ship({ 'JO Number': 'TO-2', 'Last Updated': daysAgo(12), 'ETA': '', 'ETD': '' }),
                 ship({ 'JO Number': 'TO-3', 'Account Handler': 'Andrew Mausig', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
   world({ live, team: false });
   W.run('runPenny()');
@@ -579,7 +579,7 @@ test('Pre-arrival statuses are not "arrived" data gaps', () => {
 });
 
 test('Ariel\'s 10:00 update list — his own email, even with team emails off', () => {
-  const live = [ship({ 'JO Number': 'AR-STALE', 'Last Updated': daysAgo(12), 'ETA': daysAhead(9) }),
+  const live = [ship({ 'JO Number': 'AR-STALE', 'Last Updated': daysAgo(12), 'ETA': '', 'ETD': '' }),
                 ship({ 'JO Number': 'AR-NOETA', 'ETA': '', 'ETD': daysAgo(5) }),
                 ship({ 'JO Number': 'AR-Q1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
   setNow(2026, 9, 28, 10, 0);
@@ -674,7 +674,7 @@ test('Philindo One — Penny reads the jobs from the Penny feed', () => {
     p1row({ 'JO Number': 'P1-DONE', 'ETA': daysAgo(9), 'ATA': daysAgo(8), 'Status': 'Gatepass Released', 'Stage': 'Delivered', 'Delivered': daysAgo(2) }),
     p1row({ 'JO Number': 'P1-CLOSED', 'ETA': daysAgo(9), 'ATA': daysAgo(8), 'Status': 'Gatepass Released', 'Stage': 'Closing' }),
     p1row({ 'JO Number': 'P1-MOVED', 'ETA': daysAhead(10) }),
-    p1row({ 'JO Number': 'P1-STALE', 'ETA': daysAhead(20), 'Last Updated': daysAgo(9) })
+    p1row({ 'JO Number': 'P1-STALE', 'ETA': '', 'ETD': '', 'Last Updated': daysAgo(9) })
   ];
   const hist = [{ jo: 'P1-MOVED', at: daysAgo(0).toISOString(), old: fmt(daysAhead(3), '', 'yyyy-MM-dd'), new: fmt(daysAhead(10), '', 'yyyy-MM-dd') }];
   world({ source: 'philindo-one', live: [], p1: { rows, etaHistory: hist }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' } });
@@ -716,6 +716,47 @@ test('Philindo One — first-name handlers ("Jimmy") are matched', () => {
     W.run('CONFIG.HANDLERS.push("Jimmy Cruz"); resolveHandler_("Jimmy")') === '');
 });
 
+test('Stale status — only where an update is due (team report, 8 Oct)', () => {
+  const Q = runQueues({ live: [
+    ship({ 'JO Number': 'SAIL', 'Last Updated': daysAgo(12), 'ETD': daysAgo(11), 'ETA': daysAhead(9), 'Status': 'Checking of Documents' }),
+    ship({ 'JO Number': 'SAIL-TODAY', 'Last Updated': daysAgo(12), 'ETD': daysAgo(11), 'ETA': daysAgo(0) }),
+    ship({ 'JO Number': 'BLANK', 'Last Updated': daysAgo(12), 'ETD': '', 'ETA': '', 'Status': '' }),
+    ship({ 'JO Number': 'OVERDUE', 'Last Updated': daysAgo(12), 'ETD': daysAgo(20), 'ETA': daysAgo(5) }),
+    ship({ 'JO Number': 'CLEARING', 'Last Updated': daysAgo(12), 'ETA': daysAgo(15), 'ATA': daysAgo(14), 'Status': 'Lodgement of Shipment' })
+  ] });
+  const q4 = jo => Q.q4.find(s => s.jo === jo);
+  check('in transit, ETA still ahead: not asked (the next update is the arrival)', !q4('SAIL'));
+  check('ETA is today: not asked yet', !q4('SAIL-TODAY'));
+  check('nothing recorded yet (no status, no dates): not asked', !q4('BLANK'));
+  check('ETA passed with no arrival: asked, and says so plainly',
+    q4('OVERDUE') && /^ETA was .*, arrival not recorded yet \(last update /.test(q4('OVERDUE').reasons[0]), q4('OVERDUE') && q4('OVERDUE').reasons[0]);
+  check('arrived and not moving for 12 days: still asked', q4('CLEARING') && /no status update since/.test(q4('CLEARING').reasons[0]));
+});
+
+test('Philindo One behind this morning\'s LogiSys report — Ariel is not asked twice', () => {
+  // Philindo One still holds yesterday's state; LogiSys Live (06:00 today) shows the update.
+  const stale = { 'Last Updated': daysAgo(12), 'ETA': '', 'ETD': '', 'Status': 'Checking of Documents' };
+  const rows = [ship(Object.assign({ 'JO Number': 'X-DONE' }, stale)),
+                ship(Object.assign({ 'JO Number': 'X-STILL' }, stale)),
+                ship(Object.assign({ 'JO Number': 'X-P1ONLY' }, stale))];
+  const live = [ship({ 'JO Number': 'X-DONE', 'Last Updated': daysAgo(0), 'ETA': '', 'ETD': '', 'Status': 'Original Docs Received' }),
+                ship(Object.assign({ 'JO Number': 'X-STILL' }, stale))];
+  world({ source: 'philindo-one', live, p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false, arielAt10: true });
+  setNow(2026, 9, 28, 10, 0);
+  W.run('runArielReminder()');
+  const h = to(ARIEL)[0] ? to(ARIEL)[0].htmlBody : '';
+  check('updated in today\'s LogiSys report: left off', !/X-DONE/.test(h));
+  check('still not updated in either: asked', /X-STILL/.test(h));
+  check('not in LogiSys at all: Philindo One decides', /X-P1ONLY/.test(h));
+  check('the log names what was left off', W.logs.some(l => /left off Ariel's list: 1 \(X-DONE\)/.test(l)));
+  // Yesterday's LogiSys report proves nothing about today: no filtering.
+  world({ source: 'philindo-one', live: live.map(r => Object.assign({}, r, { 'Source Report Date': daysAgo(1) })),
+          p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false, arielAt10: true });
+  W.run('runArielReminder()');
+  check('an old LogiSys report is not used to drop anything', to(ARIEL)[0] && /X-DONE/.test(to(ARIEL)[0].htmlBody));
+  setNow(2026, 9, 28);
+});
+
 test('Philindo One unreachable — Penny uses the sheet and says so', () => {
   const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
   world({ source: 'philindo-one', live, p1: { status: 401 }, propValues: { PENNY_FEED_TOKEN: 'WRONG' } });
@@ -735,7 +776,7 @@ test('Philindo One unreachable — Penny uses the sheet and says so', () => {
 });
 
 test('Philindo One — Ariel\'s 10:00 list comes from it too', () => {
-  const rows = [Object.assign(ship({ 'JO Number': 'P1-AR', 'ETA': daysAhead(20), 'Last Updated': daysAgo(10) }))];
+  const rows = [Object.assign(ship({ 'JO Number': 'P1-AR', 'ETA': '', 'ETD': '', 'Last Updated': daysAgo(10) }))];
   world({ source: 'philindo-one', live: [], p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false, arielAt10: true });
   setNow(2026, 9, 28, 10, 0);
   W.run('runArielReminder()');
