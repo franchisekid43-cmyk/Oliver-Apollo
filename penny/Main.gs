@@ -116,6 +116,9 @@ function execute_(dry, mode) {
   var Q, deliveredJos = {};
   try {
     const hmap = handlerMap_();
+    // This morning's LogiSys report, to check Philindo One against (null when there is none from today).
+    const lt = feed.source === 'philindo-one' ? logisysToday_(ss, hmap) : null;
+    feed.closedInLogisys = deliveredPerLogisys_(feed.rows, lt);
     const prev = feed.source === 'philindo-one' ? previousFromPhilindoOne_(feed.rows, feed.etaHistory)
                                                 : previousEtas_(ss);
     Q = buildQueues_(feed.rows, hmap, prev);
@@ -130,7 +133,6 @@ function execute_(dry, mode) {
     // shows as updated, even if Philindo One has not brought that report in yet.
     Q.alreadyUpdated = [];
     if (feed.source === 'philindo-one') {
-      const lt = logisysToday_(ss, hmap);
       if (lt) {
         const done = function (s) { return lt.present[s.jo] && !lt.asks[s.jo]; };
         Q.alreadyUpdated = Q.q4.concat(Q.q5a).filter(done).map(function (s) { return s.jo; });
@@ -144,6 +146,10 @@ function execute_(dry, mode) {
 
   const notes = [];
   if (feed.fallback) notes.push(feed.fallback);
+  if (feed.closedInLogisys && feed.closedInLogisys.length) {
+    notes.push(feed.closedInLogisys.length + ' shipment(s) are Job Completed in this morning\'s LogiSys report but still open in ' +
+      'Philindo One — Penny counts them as delivered: ' + feed.closedInLogisys.join(', ') + '.');
+  }
   if (caReadError_) notes.push('CA Tracker could not be read (' + caReadError_ +
     ') — handlers come from LogiSys only and cash-advance state is unknown today.');
   if (!Q.prevAvailable) notes.push('No earlier report in LogiSys Archive — ETA-change and new-JO checks skipped today.');

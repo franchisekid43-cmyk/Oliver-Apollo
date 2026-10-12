@@ -757,6 +757,25 @@ test('Philindo One behind this morning\'s LogiSys report — Ariel is not asked 
   setNow(2026, 9, 28);
 });
 
+test('Job Completed in this morning\'s LogiSys report — delivered, even if Philindo One still has it open (12 Oct)', () => {
+  // Philindo One: arrived 10 days ago, still at DO Issued. LogiSys 06:00 report: Job Completed.
+  const rows = [ship({ 'JO Number': 'JC-1', 'ETA': daysAgo(11), 'ATA': daysAgo(10), 'Status': 'DO Issued', 'Stage': 'Released', 'Last Updated': daysAgo(10) }),
+                ship({ 'JO Number': 'JC-OPEN', 'ETA': daysAgo(11), 'ATA': daysAgo(10), 'Status': 'DO Issued', 'Stage': 'Released' })];
+  const live = [ship({ 'JO Number': 'JC-1', 'ETA': daysAgo(11), 'ATA': daysAgo(10), 'Status': 'Job Completed', 'Stage': 'Delivered', 'Delivered': daysAgo(3) }),
+                ship({ 'JO Number': 'JC-OPEN', 'ETA': daysAgo(11), 'ATA': daysAgo(10), 'Status': 'DO Issued', 'Stage': 'Released' })];
+  world({ source: 'philindo-one', live, p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false });
+  W.run('runPenny()');
+  const h = to(COO)[0] ? to(COO)[0].htmlBody : '';
+  check('not listed as arrived-not-delivered in the COO email', !/<b>JC-1<\/b>/.test(h), h.match(/JC-1[^<]{0,80}/g));
+  check('a job open in both is still listed', /<b>JC-OPEN<\/b>/.test(h));
+  check('the COO is told Philindo One still has it open', /Job Completed in this morning's LogiSys report but still open in Philindo One[^<]*JC-1/.test(h));
+  // An old LogiSys report proves nothing.
+  world({ source: 'philindo-one', live: live.map(r => Object.assign({}, r, { 'Source Report Date': daysAgo(1) })),
+          p1: { rows }, propValues: { PENNY_FEED_TOKEN: 'TOKEN' }, team: false });
+  W.run('runPenny()');
+  check('yesterday\'s LogiSys report does not close anything', to(COO)[0] && /<b>JC-1<\/b>/.test(to(COO)[0].htmlBody));
+});
+
 test('Philindo One unreachable — Penny uses the sheet and says so', () => {
   const live = [ship({ 'JO Number': 'SH-1', 'ATA': daysAgo(5), 'ETA': daysAgo(6), 'Status': 'DO Issued' })];
   world({ source: 'philindo-one', live, p1: { status: 401 }, propValues: { PENNY_FEED_TOKEN: 'WRONG' } });

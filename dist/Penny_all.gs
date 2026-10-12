@@ -709,6 +709,24 @@ function rememberRun_(rows, at) {
 }
 
 /**
+ * A job this morning's LogiSys report shows as delivered (Job Completed) is
+ * delivered, even where Philindo One still holds it open: Philindo One's own
+ * rule closes such a job ("Job Completed in LogiSys"), but its Penny feed has
+ * shown some of them open (12 Oct 2026). Marks the rows; returns the JOs.
+ */
+function deliveredPerLogisys_(rows, lt) {
+  const out = [];
+  if (!lt) return out;
+  rows.forEach(function (r) {
+    const jo = norm_(r['JO Number']);
+    if (!lt.delivered[jo] || isDelivered_(r)) return;
+    r['Delivered'] = lt.delivered[jo];
+    out.push(jo);
+  });
+  return out;
+}
+
+/**
  * Philindo One brings in LogiSys's morning report only when someone opens it,
  * so at 07:45 or 10:00 it can still hold yesterday's state. This reads this
  * morning's LogiSys report (LogiSys Live) and says which JOs it carries and
@@ -721,11 +739,16 @@ function logisysToday_(ss, hmap) {
     const newest = feedDate_(live.rows);
     if (!newest || daysBetween_(newest, today_()) !== 0) return null;
     const q = buildQueues_(live.rows, hmap, { map: {}, available: false });
-    const present = {}, asks = {};
-    currentRows_(live.rows).rows.forEach(function (r) { present[norm_(r['JO Number'])] = true; });
+    const present = {}, asks = {}, delivered = {};
+    currentRows_(live.rows).rows.forEach(function (r) {
+      const jo = norm_(r['JO Number']);
+      present[jo] = true;
+      // Job Completed (or another delivered status) in LogiSys: the date it was first reported so.
+      if (isDelivered_(r)) delivered[jo] = validDate_(r['Delivered']) || validDate_(r['Job Completed On']) || today_();
+    });
     q.q4.concat(q.q5a.filter(function (s) { return s.sev !== 'green'; }))
       .forEach(function (s) { asks[s.jo] = true; });
-    return { present: present, asks: asks };
+    return { present: present, asks: asks, delivered: delivered };
   } catch (e) {
     Logger.log('LogiSys Live could not be compared: ' + e.message);
     return null;
@@ -1534,6 +1557,9 @@ function execute_(dry, mode) {
   var Q, deliveredJos = {};
   try {
     const hmap = handlerMap_();
+    // This morning's LogiSys report, to check Philindo One against (null when there is none from today).
+    const lt = feed.source === 'philindo-one' ? logisysToday_(ss, hmap) : null;
+    feed.closedInLogisys = deliveredPerLogisys_(feed.rows, lt);
     const prev = feed.source === 'philindo-one' ? previousFromPhilindoOne_(feed.rows, feed.etaHistory)
                                                 : previousEtas_(ss);
     Q = buildQueues_(feed.rows, hmap, prev);
@@ -1548,7 +1574,6 @@ function execute_(dry, mode) {
     // shows as updated, even if Philindo One has not brought that report in yet.
     Q.alreadyUpdated = [];
     if (feed.source === 'philindo-one') {
-      const lt = logisysToday_(ss, hmap);
       if (lt) {
         const done = function (s) { return lt.present[s.jo] && !lt.asks[s.jo]; };
         Q.alreadyUpdated = Q.q4.concat(Q.q5a).filter(done).map(function (s) { return s.jo; });
@@ -1562,6 +1587,10 @@ function execute_(dry, mode) {
 
   const notes = [];
   if (feed.fallback) notes.push(feed.fallback);
+  if (feed.closedInLogisys && feed.closedInLogisys.length) {
+    notes.push(feed.closedInLogisys.length + ' shipment(s) are Job Completed in this morning\'s LogiSys report but still open in ' +
+      'Philindo One — Penny counts them as delivered: ' + feed.closedInLogisys.join(', ') + '.');
+  }
   if (caReadError_) notes.push('CA Tracker could not be read (' + caReadError_ +
     ') — handlers come from LogiSys only and cash-advance state is unknown today.');
   if (!Q.prevAvailable) notes.push('No earlier report in LogiSys Archive — ETA-change and new-JO checks skipped today.');

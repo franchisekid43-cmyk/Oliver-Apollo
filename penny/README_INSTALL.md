@@ -1,6 +1,6 @@
 # Penny — installation
 
-Six Apps Script files plus `appsscript.json`. Tested: **145 checks passing** (`node penny_tests.js`),
+Six Apps Script files plus `appsscript.json`. Tested: **149 checks passing** (`node penny_tests.js`),
 covering the acceptance criteria in `docs/PROMPT_penny_pending_agent.md` — the free-time ladder,
 the earlier-vs-later ETA asymmetry, the 8-day staleness rule, routing, silence, and a write audit.
 
@@ -65,6 +65,9 @@ writes to Philindo One. What changes:
   Philindo One brings in the 06:00 LogiSys report only when someone opens its dashboard or
   Shipment Board, so at 10:00 it can still hold yesterday's state. A job that today's LogiSys Live
   already shows as updated is left off Ariel's list; the log names each one. (Team report, 8 Oct.)
+- **Job Completed in this morning's LogiSys report = delivered**, in every email, even where
+  Philindo One's feed still shows the job open (12 Oct: five such jobs). The COO's email names them,
+  so Philindo One can be checked. Philindo One's own rule closes these jobs too.
 
 **Switching it on (once):**
 

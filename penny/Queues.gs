@@ -230,6 +230,24 @@ function rememberRun_(rows, at) {
 }
 
 /**
+ * A job this morning's LogiSys report shows as delivered (Job Completed) is
+ * delivered, even where Philindo One still holds it open: Philindo One's own
+ * rule closes such a job ("Job Completed in LogiSys"), but its Penny feed has
+ * shown some of them open (12 Oct 2026). Marks the rows; returns the JOs.
+ */
+function deliveredPerLogisys_(rows, lt) {
+  const out = [];
+  if (!lt) return out;
+  rows.forEach(function (r) {
+    const jo = norm_(r['JO Number']);
+    if (!lt.delivered[jo] || isDelivered_(r)) return;
+    r['Delivered'] = lt.delivered[jo];
+    out.push(jo);
+  });
+  return out;
+}
+
+/**
  * Philindo One brings in LogiSys's morning report only when someone opens it,
  * so at 07:45 or 10:00 it can still hold yesterday's state. This reads this
  * morning's LogiSys report (LogiSys Live) and says which JOs it carries and
@@ -242,11 +260,16 @@ function logisysToday_(ss, hmap) {
     const newest = feedDate_(live.rows);
     if (!newest || daysBetween_(newest, today_()) !== 0) return null;
     const q = buildQueues_(live.rows, hmap, { map: {}, available: false });
-    const present = {}, asks = {};
-    currentRows_(live.rows).rows.forEach(function (r) { present[norm_(r['JO Number'])] = true; });
+    const present = {}, asks = {}, delivered = {};
+    currentRows_(live.rows).rows.forEach(function (r) {
+      const jo = norm_(r['JO Number']);
+      present[jo] = true;
+      // Job Completed (or another delivered status) in LogiSys: the date it was first reported so.
+      if (isDelivered_(r)) delivered[jo] = validDate_(r['Delivered']) || validDate_(r['Job Completed On']) || today_();
+    });
     q.q4.concat(q.q5a.filter(function (s) { return s.sev !== 'green'; }))
       .forEach(function (s) { asks[s.jo] = true; });
-    return { present: present, asks: asks };
+    return { present: present, asks: asks, delivered: delivered };
   } catch (e) {
     Logger.log('LogiSys Live could not be compared: ' + e.message);
     return null;
